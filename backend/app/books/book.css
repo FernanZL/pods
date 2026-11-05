@@ -77,8 +77,9 @@ body { margin: 0; font-size: 10.6pt; line-height: 1.58; }
 
 /* band: tapes across the top, title below on white */
 .cover-band .cover-tapes { position: absolute; left: 0; top: 40mm; }
-.cover-band .cover-title { position: absolute; left: 22mm; right: 22mm; bottom: 64mm; }
-.cover-band .cover-deck { position: absolute; left: 22mm; width: 118mm; top: 222mm; }
+.cover-band .cover-text { position: absolute; left: 22mm; right: 22mm; bottom: 28mm; }
+.cover-band .cover-title { margin-bottom: 7mm; }
+.cover-band .cover-deck { width: 118mm; }
 
 /* panel: an inset primary box carries the title in white; tapes below on white */
 .cover-panel .cover-masthead { display: none; }
@@ -94,7 +95,7 @@ body { margin: 0; font-size: 10.6pt; line-height: 1.58; }
 .cover-panel .cover-title { position: absolute; left: 14mm; right: 14mm; bottom: 14mm; color: var(--primary-ink); }
 .cover-panel .cover-title em { color: var(--accent-light); }
 .cover-panel .cover-tapes { position: absolute; left: 16mm; top: 184mm; }
-.cover-panel .cover-deck { position: absolute; left: 22mm; width: 118mm; top: 238mm; }
+.cover-panel .cover-deck { position: absolute; left: 22mm; width: 118mm; bottom: 28mm; }
 
 /* column: title high on the page, tapes settle at the bottom */
 .cover-column .cover-title { position: absolute; left: 22mm; right: 30mm; top: 36mm; }
@@ -190,7 +191,7 @@ q.said { font-style: italic; color: var(--primary); }
 .figure figcaption { margin-top: 2.2mm; font: 400 8pt/1.4 var(--sans); color: var(--ink-muted); }
 .figure figcaption b { color: var(--primary); }
 
-.ending { margin-top: 7mm; padding-top: 3.5mm; border-top: 0.6pt solid var(--line); font: 700 7.6pt var(--sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted); }
+.ending { break-before: avoid; margin-top: 7mm; padding-top: 3.5mm; border-top: 0.6pt solid var(--line); font: 700 7.6pt var(--sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted); }
 
 /* ================= Closing ================= */
 .closing { break-before: page; page: front; }

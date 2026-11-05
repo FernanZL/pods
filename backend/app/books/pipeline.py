@@ -45,7 +45,7 @@ from app.books.document import (
 )
 from app.books.render import render_pdf
 from app.books.theme import make_theme
-from app.books.verify import QuoteNotFound, find_quote, resolve_runs
+from app.books.verify import QuoteNotFound, find_quote, recover_hidden, resolve_runs
 from app.config import get_settings
 from app.domain import ChatMessage, ProgressFn, Transcript
 from app.models import Book as BookRow
@@ -218,6 +218,8 @@ Rules:
   section (the writer will skip them) rather than making a section of them.
 - Chapters follow the conversation's real arcs, not equal time slices.
 - Quotes must be copied exactly from the transcript.
+- Opener and closing quotes must be substantive lines from the conversation itself: never
+  the intro, the outro, thanks, sponsor reads, or requests to subscribe/follow/review.
 - The whole book will be about {target} words.
 {STYLE}"""
     user = (
@@ -316,7 +318,10 @@ Return ONLY a JSON object:
   back-and-forth exchange (both lines verbatim). "callout" only when the slice gives concrete,
   practical steps (3-5 short items, paraphrased, no invented advice); at most one per section.
 - Length: about {sec.target_words} words of paragraph text. Do not stop short; do not pad.
-- No headings (the section heading is set by the layout). Do not repeat earlier sections."""
+- No headings (the section heading is set by the layout). Do not repeat earlier sections.
+- Never narrate the show's own housekeeping: sponsors and ads, links, "subscribe", "follow",
+  "leave a review", thanks for listening, intros and outros. If the slice ends with the
+  outro, end the section on the last substantive idea instead."""
     user = (
         f"Book: {plan.title}\nPodcast: {ctx['podcast']}, episode {ctx['number']}: "
         f"{ctx['title']}\nChapter {ci + 1}: {ch.title} ({ch.dek})\n"
@@ -429,13 +434,59 @@ def _fake_section(plan: Plan, ci: int, si: int, transcript: Transcript) -> Writt
 # ------------------------------------------------------------------------ assembly
 
 
-def _verified(transcript: Transcript, text: str) -> Quote | None:
+_HOUSEKEEPING = re.compile(
+    r"thank(s| you) (so much )?for (joining|listening|watching|tuning)|subscribe|sponsor|"
+    r"brought to you|please (follow|rate|review)|leave (us )?a review|patreon|show ?notes|"
+    r"welcome to the|link in the|promo code|discount|today'?s episode",
+    re.I,
+)
+
+
+def _is_housekeeping(q: Quote, duration: float) -> bool:
+    """Intro/outro and podcast admin make poor openers and closers."""
+    edge = q.start < duration * 0.02 or q.start > duration * 0.97
+    return bool(_HOUSEKEEPING.search(q.text)) or (edge and len(q.text.split()) < 14)
+
+
+def _verified(transcript: Transcript, text: str, *, substantive: bool = False) -> Quote | None:
     if not text:
         return None
     try:
-        return find_quote(transcript, text)
+        q = find_quote(transcript, text)
     except QuoteNotFound:
         return None
+    if substantive and transcript.segments and _is_housekeeping(q, transcript.segments[-1].end):
+        return None
+    return q
+
+
+def main_speakers(transcript: Transcript, min_share: float = 0.05) -> list[str]:
+    """Display names of speakers with at least `min_share` of the talk time, in order of
+    appearance (diarization noise such as a two-word stray label is left out)."""
+    talk: dict[str, float] = {}
+    for seg in transcript.segments:
+        talk[seg.speaker] = talk.get(seg.speaker, 0.0) + max(0.0, seg.end - seg.start)
+    total = sum(talk.values()) or 1.0
+    labels = [k for k in dict.fromkeys(s.speaker for s in transcript.segments)]
+    keep = [k for k in labels if talk.get(k, 0) / total >= min_share] or labels[:1]
+    return [transcript.speakers.get(k, f"Speaker {k}") for k in keep][:4]
+
+
+def _cap_words(text: str, limit: int) -> str:
+    """Trim to whole sentences within `limit` words (cover decks must fit their box)."""
+    words = text.split()
+    if len(words) <= limit:
+        return text.strip()
+    cut = " ".join(words[:limit])
+    end = max(cut.rfind(". "), cut.rfind("? "), cut.rfind("! "))
+    return (cut[: end + 1] if end > 40 else cut.rstrip(",;:") + "\u2026").strip()
+
+
+def _closing(book_chapters: list[Chapter], planned: Quote | None) -> Quote | None:
+    if planned:
+        return planned
+    pulls = [b.quote for c in reversed(book_chapters) for b in c.blocks if isinstance(b, PullQuote)]
+    return pulls[0] if pulls else None
 
 
 def _assemble(plan: Plan, written: dict[tuple[int, int], Written], transcript, ctx) -> Book:
@@ -447,7 +498,7 @@ def _assemble(plan: Plan, written: dict[tuple[int, int], Written], transcript, c
             if si > 0 and sp.heading:
                 blocks.append(Heading(sp.heading))
             blocks.extend(written[(ci, si)].blocks)
-        opener = _verified(transcript, cp.opener) or next(
+        opener = _verified(transcript, cp.opener, substantive=True) or next(
             (b.quote for b in blocks if isinstance(b, PullQuote)), None
         )
         chapters.append(
@@ -462,20 +513,17 @@ def _assemble(plan: Plan, written: dict[tuple[int, int], Written], transcript, c
             )
         )
     title_accent = plan.title_accent if plan.title.endswith(plan.title_accent) else ""
-    speakers = [
-        transcript.speakers.get(k, f"Speaker {k}") for k in dict.fromkeys(s.speaker for s in segs)
-    ]
     return Book(
         title=plan.title,
         title_accent=title_accent,
-        deck=plan.deck,
+        deck=_cap_words(plan.deck, 45),
         podcast_title=ctx["podcast"],
         episode_number=int(ctx["number"]),
         episode_title=ctx["title"],
-        speakers=speakers[:4],
+        speakers=main_speakers(transcript),
         duration=segs[-1].end,
         chapters=chapters,
-        closing=_verified(transcript, plan.closing),
+        closing=_closing(chapters, _verified(transcript, plan.closing, substantive=True)),
         demo=ctx.get("demo") == "1",
     )
 
@@ -648,3 +696,49 @@ def build_book(book_id: int, on_progress: ProgressFn) -> None:
         session.add(row)
         session.commit()
     on_progress(1.0, "Book ready")
+
+
+def repair_book(book_id: int) -> BookRow:
+    """Re-check an existing book with the current verifier and rules, then re-render.
+
+    No model calls: recovers speaker words left unquoted in the narration, drops
+    minor diarization labels from the credits, replaces housekeeping openers and
+    closers, caps the cover deck. Text the writer produced is otherwise untouched.
+    """
+    with db.session_scope() as session:
+        row = session.get(BookRow, book_id)
+        if row is None or not row.dir_path:
+            raise ValueError(f"Book {book_id} has no written text yet")
+        episode = session.get(Episode, row.episode_id)
+        if episode is None or not episode.transcript_path:
+            raise ValueError("The episode for this book is missing")
+        bdir = storage.to_abs(row.dir_path)
+        transcript = storage.read_transcript(storage.to_abs(episode.transcript_path))
+    path = bdir / "book.json"
+    book = book_from_dict(json.loads(path.read_text("utf-8")))
+    duration = transcript.segments[-1].end if transcript.segments else 0.0
+    quotes = 0
+    for ch in book.chapters:
+        for b in ch.blocks:
+            if isinstance(b, Paragraph):
+                b.runs = recover_hidden(transcript, b.runs)
+                quotes += sum(1 for r in b.runs if isinstance(r, Quote))
+        if ch.opener and _is_housekeeping(ch.opener, duration):
+            ch.opener = next((b.quote for b in ch.blocks if isinstance(b, PullQuote)), None)
+    if book.closing and _is_housekeeping(book.closing, duration):
+        book.closing = _closing(book.chapters, None)
+    book.speakers = main_speakers(transcript)
+    book.deck = _cap_words(book.deck, 45)
+    path.write_text(json.dumps(book_to_dict(book), ensure_ascii=False), "utf-8")
+    with db.session_scope() as session:
+        row = session.get(BookRow, book_id)
+        assert row is not None
+        pulls = sum(
+            isinstance(b, PullQuote) + 2 * isinstance(b, QuotePair)
+            for c in book.chapters
+            for b in c.blocks
+        )
+        row.quotes, row.words = quotes + pulls, word_count(book)
+        session.add(row)
+        session.commit()
+    return render_book(book_id)

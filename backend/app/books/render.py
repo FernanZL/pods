@@ -212,7 +212,7 @@ def _cover(book: Book, segs: Sequence[Segment], theme: Theme, image_uri: str | N
     elif layout == "column":
         inner = f'{masthead}{title_el}<div class="cover-rule"></div>{deck}{tapes_el}'
     else:
-        inner = f"{masthead}{tapes_el}{title_el}{deck}"
+        inner = f'{masthead}{tapes_el}<div class="cover-text">{title_el}{deck}</div>'
     return f'<section class="cover">{inner}{foot}</section>'
 
 

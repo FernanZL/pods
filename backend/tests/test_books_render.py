@@ -102,3 +102,41 @@ def test_artwork_is_duotoned_into_the_cover(tmp_path) -> None:
     out = render_pdf(_book(), TR.segments, theme, tmp_path / "b.pdf", artwork=art)
     assert (tmp_path / "b-cover.png").is_file()
     assert out.read_bytes()[:5] == b"%PDF-"
+
+
+SEAM = Transcript(
+    episode_id=2,
+    model="m",
+    speakers={"A": "Host", "B": "Guest"},
+    segments=[
+        Segment("A", 0, 5, "Why fence lines? Honestly, I don't"),
+        Segment("B", 5, 6, "Mm."),
+        Segment("A", 6, 20, "know. I just think they're beautiful and old and quiet."),
+        Segment(
+            "B",
+            20,
+            40,
+            "You have to sit there and ponder each movement of your hand and the ink on the page.",
+        ),
+        Segment("B", 40, 60, "I wrote about the dark side of human nature in the past decade."),
+    ],
+)
+
+
+def test_quotes_survive_segment_seams_and_small_slips() -> None:
+    q = find_quote(SEAM, "I don't know. I just think they're beautiful")
+    assert q.speaker == "Host"  # majority of the matched words
+    slip = find_quote(SEAM, "sit there and ponder each movement of my hand and the ink")
+    assert "your hand" in slip.text and slip.speaker == "Guest"  # snapped to the real words
+
+
+def test_hidden_speech_is_quoted_but_echoes_are_not() -> None:
+    from app.books.verify import recover_hidden
+
+    runs = recover_hidden(
+        SEAM, ["She described having to sit there and ponder each movement of my hand."]
+    )
+    quotes = [r for r in runs if not isinstance(r, str)]
+    assert quotes and "your hand" in quotes[0].text
+    echo = recover_hidden(SEAM, ["Greene knew the dark side of human nature in the boardroom."])
+    assert all(isinstance(r, str) for r in echo)

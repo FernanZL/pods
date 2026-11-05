@@ -111,7 +111,7 @@ class _StubLLM:
                         {
                             "title": "Mornings",
                             "dek": "d",
-                            "opener_quote": "Segment number 0 explains",
+                            "opener_quote": "Segment number 3 explains how morning light and evening darkness shape the clock",
                             "sections": [
                                 {"heading": "A", "brief": "b", "first": 0, "last": 9},
                                 {"heading": "B", "brief": "b", "first": 10, "last": 14},
@@ -172,7 +172,23 @@ def test_llm_path_verifies_quotes_and_covers_the_tail(session, monkeypatch, sett
     # the last section was stretched to the end of the conversation
     assert data["chapters"][-1]["end"] == 29 * 30.0 + 28
     # unverifiable opener falls back (no pull survived) -> None; verified one is kept
-    assert data["chapters"][0]["opener"]["speaker"] == "Host"
+    assert data["chapters"][0]["opener"]["speaker"] == "Guest"  # segment 3 is the guest
     assert data["chapters"][1]["opener"] is None
     plan = json.loads((storage.to_abs(row.dir_path) / "plan.json").read_text())
     assert all(s["target_words"] >= 250 for c in plan["chapters"] for s in c["sections"])
+
+
+def test_housekeeping_closers_are_refused_and_minor_speakers_dropped() -> None:
+    from app.books.document import Quote
+
+    tr = Transcript(
+        episode_id=1, model="m", speakers={"A": "Host", "B": "Guest", "@": "Speaker @"},
+        segments=[Segment("A", 0, 300, "intro " * 50), Segment("B", 300, 900, "talk " * 200),
+                  Segment("@", 900, 901, "noise")],
+    )  # fmt: skip
+    assert pipeline.main_speakers(tr) == ["Host", "Guest"]
+    outro = Quote("Thank you for joining me for today's discussion with the guest.", "Host", 890)
+    assert pipeline._is_housekeeping(outro, 901)
+    assert not pipeline._is_housekeeping(
+        Quote("Attention makes ordinary things strange.", "Guest", 400), 901
+    )
