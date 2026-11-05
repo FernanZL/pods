@@ -97,8 +97,7 @@ class Settings(BaseSettings):
             except PermissionError as exc:
                 raise PermissionError(
                     f"Cannot write to {d}. If running in Docker, the host ./data folder is "
-                    "probably owned by root: run `sudo chown -R $(id -u):$(id -g) data` "
-                    "(or start with ./dev up, which creates it with your user)."
+                    "probably owned by root: run `sudo chown -R $(id -u):$(id -g) data`."
                 ) from exc
 
 

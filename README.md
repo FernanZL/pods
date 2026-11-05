@@ -31,7 +31,7 @@ There's no Hugging Face, no local models and no GPU. Contracts and module owners
 
 ```bash
 cp .env.example .env        # add OPENAI_API_KEY (and OPENROUTER_API_KEY if you use it)
-./dev up                    # docker compose up --build -d
+docker compose up --build   # add -d to run in the background
 open http://localhost:8080
 ```
 
@@ -41,7 +41,7 @@ open http://localhost:8080
 4. Follow progress in **Jobs**. Each episode becomes chat-ready as soon as it is indexed.
 5. **Chat**: ask anything. Narrow the scope to one podcast or chosen episodes. Click a citation to jump to that moment in the episode.
 
-`./data` is a bind mount, so it survives `docker compose down` and rebuilds. The backend runs as your user so those files stay yours: `./dev up` handles this; with plain `docker compose up`, set `HOST_UID`/`HOST_GID` if your user id isn't 1000.
+`./data` is a bind mount, so it survives `docker compose down` and rebuilds. The backend runs as whoever owns `./data` on the host, so those files stay yours.
 
 ## Local development
 

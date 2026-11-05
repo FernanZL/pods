@@ -8,6 +8,8 @@ COPY pyproject.toml uv.lock .python-version ./
 RUN uv sync --frozen --no-dev --no-install-project
 COPY app ./app
 COPY scripts ./scripts
-ENV PATH="/opt/venv/bin:$PATH" DATA_DIR=/data
+COPY entrypoint.sh /entrypoint.sh
+ENV PATH="/opt/venv/bin:$PATH" DATA_DIR=/data HOME=/tmp
 EXPOSE 8000
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

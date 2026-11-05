@@ -4,12 +4,8 @@ services:
     env_file:
       - path: .env
         required: false
-    # Run as the host user so files in ./data stay owned by you.
-    # ./dev up sets HOST_UID/HOST_GID; plain `docker compose up` assumes 1000:1000.
-    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     environment:
       DATA_DIR: /data
-      HOME: /tmp
     volumes:
       - ./data:/data   # audio, transcripts, vector index, sqlite — persists across rebuilds
     ports:
