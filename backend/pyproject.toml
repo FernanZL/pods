@@ -14,10 +14,12 @@ dependencies = [
     "sqlmodel>=0.0.48",
     "sse-starlette>=3.6.0",
     "uvicorn[standard]>=0.54.0",
+    "weasyprint>=70.0",
 ]
 
 [dependency-groups]
 dev = [
+    "pymupdf>=2.1",
     "pytest>=9.2.0",
     "pytest-asyncio>=1.4.1.post1",
     "respx>=0.23.1",
@@ -35,3 +37,7 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# hand-written sample prose
+"scripts/sample_book.py" = ["E501"]
