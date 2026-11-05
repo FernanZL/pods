@@ -40,8 +40,37 @@ FONT_PAIRS: list[FontPair] = [
 ]
 
 TAPE_STYLES = ("bars", "pills", "ticks", "blocks")
+# Cover art: data-driven drawings of the conversation, decorative geometry, a plain
+# colour field, or the podcast's own artwork (duotoned into the palette).
+ART_KINDS = ("tapes", "rings", "dots", "waveform", "mosaic", "stripes", "field", "image")
 COVER_LAYOUTS = ("band", "panel", "column")
 OPENER_STYLES = ("box", "rule")
+OPENER_ART = ("echo", "echo", "none")  # repeat the cover motif in a strip, or nothing
+
+
+@dataclass(frozen=True)
+class Family:
+    """A colour family: hue ranges for primary (dark), accent and a second accent."""
+
+    name: str
+    primary: tuple[float, float]
+    accent: tuple[float, float]
+    accent2: tuple[float, float]
+    primary_sat: tuple[float, float] = (0.45, 0.62)
+    accent_sat: tuple[float, float] = (0.6, 0.75)
+    warm_paper: bool = False
+
+
+FAMILIES: list[Family] = [
+    Family("Indigo & magenta", (232, 272), (312, 348), (198, 228)),
+    Family("Forest & ochre", (140, 168), (32, 46), (78, 100), (0.35, 0.5), (0.7, 0.85), True),
+    Family("Ink & vermilion", (214, 228), (4, 14), (30, 42), (0.35, 0.5), (0.72, 0.85), True),
+    Family("Teal & coral", (178, 192), (6, 18), (40, 52), (0.5, 0.65), (0.65, 0.8), True),
+    Family("Plum & mustard", (282, 300), (40, 50), (330, 345), (0.35, 0.5), (0.75, 0.9), True),
+    Family("Oxblood & rose", (348, 360), (336, 352), (20, 32), (0.5, 0.65), (0.45, 0.6), True),
+    Family("Navy & tangerine", (212, 222), (22, 32), (190, 202), (0.55, 0.7), (0.8, 0.92)),
+    Family("Charcoal & electric", (222, 232), (210, 222), (160, 176), (0.08, 0.16), (0.8, 0.92)),
+]
 
 
 @dataclass(frozen=True)
@@ -53,7 +82,8 @@ class Palette:
     primary_ink: str  # text on primary
     primary_soft: str  # secondary text on primary
     accent: str  # rules, drop caps, small caps labels (>= 4.5:1 on paper)
-    accent2: str  # cool second accent (speaker colour, small marks)
+    accent2: str  # second accent (speaker colour, small marks)
+    accent_light: str  # accent that reads on the primary box
     tint: str  # light panels
     tint2: str  # light panels, cool
     line: str  # hairlines
@@ -63,8 +93,12 @@ class Palette:
 @dataclass(frozen=True)
 class Theme:
     seed: int
+    family: str
     palette: Palette
     fonts: FontPair
+    art: str  # cover art kind (ART_KINDS); "image" falls back when there is no artwork
+    fallback_art: str  # used when art == "image" but the podcast has no artwork
+    opener_art: str  # "echo" (cover motif strip) or "none"
     tape_style: str
     tape_rows: int
     cover_layout: str
@@ -90,47 +124,67 @@ def contrast(a: str, b: str) -> float:
     return (la + 0.05) / (lb + 0.05)
 
 
-def _palette(rng: random.Random) -> Palette:
-    hp = rng.uniform(232, 272)  # indigo, leaning blue or violet
-    ha = rng.uniform(312, 348)  # magenta, leaning violet or rose
-    hc = rng.uniform(198, 228)  # sky blue
-    primary = _hsl(hp, rng.uniform(0.48, 0.62), rng.uniform(0.2, 0.26))
-    accent = _hsl(ha, rng.uniform(0.58, 0.7), rng.uniform(0.38, 0.43))
-    accent2 = _hsl(hc, rng.uniform(0.55, 0.7), rng.uniform(0.5, 0.56))
-    paper = _hsl(hp, 0.4, 0.988)
-    pal = Palette(
-        ink=_hsl(hp, 0.35, 0.12),
-        ink_muted=_hsl(hp, 0.18, 0.4),
+def _shade_until(
+    h: float, sat: float, light: float, against: str, ratio: float, step: float
+) -> str:
+    """Move lightness by `step` until the colour reaches `ratio` contrast against `against`."""
+    for _ in range(60):
+        c = _hsl(h, sat, light)
+        if contrast(c, against) >= ratio:
+            return c
+        light = min(0.97, max(0.03, light + step))
+    return c
+
+
+def _palette(rng: random.Random, fam: Family) -> Palette:
+    hp = rng.uniform(*fam.primary)
+    ha = rng.uniform(*fam.accent)
+    hb = rng.uniform(*fam.accent2)
+    sp = rng.uniform(*fam.primary_sat)
+    sa = rng.uniform(*fam.accent_sat)
+    paper = _hsl(30 if fam.warm_paper else hp, 0.45 if fam.warm_paper else 0.4, 0.985)
+    primary_ink = _hsl(hp, 0.4, 0.97)
+    # Guard rails: lightness is pushed until every pairing is readable.
+    primary = _shade_until(hp, sp, rng.uniform(0.18, 0.26), primary_ink, 7.0, -0.02)
+    accent = _shade_until(ha, sa, rng.uniform(0.38, 0.46), paper, 4.5, -0.02)
+    accent_light = _shade_until(ha, sa, 0.72, primary, 4.5, +0.02)
+    accent2 = _hsl(hb, rng.uniform(0.55, 0.75), rng.uniform(0.48, 0.56))
+    ink = _shade_until(hp, 0.3, 0.14, paper, 12.0, -0.02)
+    return Palette(
+        ink=ink,
+        ink_muted=_shade_until(hp, 0.15, 0.42, paper, 5.0, -0.02),
         paper=paper,
         primary=primary,
-        primary_ink=_hsl(hp, 0.6, 0.97),
-        primary_soft=_hsl(hp, 0.45, 0.84),
+        primary_ink=primary_ink,
+        primary_soft=_hsl(hp, 0.3, 0.84),
         accent=accent,
         accent2=accent2,
-        tint=_hsl(ha, 0.6, 0.95),
-        tint2=_hsl(hp, 0.55, 0.955),
-        line=_hsl(hp, 0.25, 0.82),
+        accent_light=accent_light,
+        tint=_hsl(ha, 0.55, 0.95),
+        tint2=_hsl(hp, 0.35, 0.95),
+        line=_hsl(hp, 0.15, 0.82),
         speakers=(
-            _hsl(hp + rng.uniform(-8, 8), 0.62, 0.62),
-            _hsl(ha, 0.62, 0.66),
-            _hsl(hc, 0.62, 0.62),
-            _hsl(hp + 30, 0.5, 0.7),
+            _hsl(hp, max(0.35, sp), 0.55),
+            _hsl(ha, sa, 0.6),
+            _hsl(hb, 0.6, 0.58),
+            _hsl(hp + 25, 0.35, 0.72),
         ),
     )
-    # Guard rails: never ship unreadable combinations.
-    assert contrast(pal.primary, pal.primary_ink) >= 7, "primary too light"
-    assert contrast(pal.accent, pal.paper) >= 4.5, "accent too light"
-    assert contrast(pal.ink, pal.paper) >= 12, "ink too light"
-    return pal
 
 
 def make_theme(seed: int) -> Theme:
     """Deterministic theme for a seed."""
     rng = random.Random(seed)
+    fam = rng.choice(FAMILIES)
+    art = rng.choice(ART_KINDS)
     return Theme(
         seed=seed,
-        palette=_palette(rng),
+        family=fam.name,
+        palette=_palette(rng, fam),
         fonts=rng.choice(FONT_PAIRS),
+        art=art,
+        fallback_art=rng.choice([a for a in ART_KINDS if a not in ("image", "field")]),
+        opener_art=rng.choice(OPENER_ART),
         tape_style=rng.choice(TAPE_STYLES),
         tape_rows=rng.choice((6, 7, 8, 9)),
         cover_layout=rng.choice(COVER_LAYOUTS),

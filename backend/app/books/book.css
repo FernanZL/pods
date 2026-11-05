@@ -72,7 +72,8 @@ body { margin: 0; font-size: 10.6pt; line-height: 1.58; }
   display: flex; justify-content: space-between;
   font: 600 7.4pt var(--sans); letter-spacing: 0.08em; color: var(--ink-muted);
 }
-.cover-tapes svg { display: block; }
+.cover-tapes svg, .cover-tapes img { display: block; }
+.art-img { object-fit: cover; }
 
 /* band: tapes across the top, title below on white */
 .cover-band .cover-tapes { position: absolute; left: 0; top: 40mm; }

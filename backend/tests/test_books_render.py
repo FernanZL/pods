@@ -79,3 +79,26 @@ def test_render_html_contains_verified_quotes_and_citations(seed: int) -> None:
 def test_render_pdf_smoke(tmp_path) -> None:
     out = render_pdf(_book(), TR.segments, make_theme(7), tmp_path / "b.pdf")
     assert out.read_bytes()[:5] == b"%PDF-"
+
+
+def test_every_family_and_art_kind_appears_and_renders() -> None:
+    from app.books.theme import ART_KINDS, FAMILIES
+
+    themes = [make_theme(s) for s in range(1, 400)]
+    assert {t.family for t in themes} == {f.name for f in FAMILIES}
+    assert {t.art for t in themes} == set(ART_KINDS)
+    for kind in ART_KINDS:
+        theme = next(t for t in themes if t.art == kind)
+        html = render_html(_book(), TR.segments, theme)  # image falls back without artwork
+        assert f"art-{kind}" in html
+
+
+def test_artwork_is_duotoned_into_the_cover(tmp_path) -> None:
+    from PIL import Image
+
+    art = tmp_path / "art.png"
+    Image.new("RGB", (300, 300), (120, 80, 40)).save(art)
+    theme = next(make_theme(s) for s in range(1, 400) if make_theme(s).art == "image")
+    out = render_pdf(_book(), TR.segments, theme, tmp_path / "b.pdf", artwork=art)
+    assert (tmp_path / "b-cover.png").is_file()
+    assert out.read_bytes()[:5] == b"%PDF-"

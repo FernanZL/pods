@@ -235,13 +235,20 @@ def build_book(tr: Transcript) -> Book:
 def main() -> None:
     tr = read_transcript(Path(sys.argv[1]))
     out = Path(sys.argv[2])
-    seeds = [int(s) for s in sys.argv[3:]] or [7]
+    args = sys.argv[3:]
+    artwork = None
+    if args and args[0].startswith("--artwork="):
+        artwork = Path(args.pop(0).split("=", 1)[1])
+    seeds = [int(s) for s in args] or [7]
     book = build_book(tr)
     for seed in seeds:
         theme = make_theme(seed)
-        path = render_pdf(book, tr.segments, theme, out / f"sample-seed-{seed}.pdf")
+        path = render_pdf(
+            book, tr.segments, theme, out / f"sample-seed-{seed}.pdf", artwork=artwork
+        )
         print(
-            f"seed {seed}: {theme.fonts.name}, tapes={theme.tape_style}, cover={theme.cover_layout}, "
+            f"seed {seed}: {theme.family}, art={theme.art}, {theme.fonts.name}, "
+            f"tapes={theme.tape_style}, cover={theme.cover_layout}, "
             f"opener={theme.opener_style}, primary={theme.palette.primary} accent={theme.palette.accent} "
             f"-> {path.name}"
         )

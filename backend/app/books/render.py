@@ -6,6 +6,7 @@ import html
 from collections.abc import Sequence
 from pathlib import Path
 
+from app.books.art import art_markup, duotone
 from app.books.document import (
     Book,
     Callout,
@@ -18,7 +19,7 @@ from app.books.document import (
     SpeakerFigure,
 )
 from app.books.tapes import tapes_svg
-from app.books.theme import STATIC_DIR, Theme, _hsl
+from app.books.theme import STATIC_DIR, Theme
 from app.domain import Segment
 
 CSS_PATH = Path(__file__).parent / "book.css"
@@ -52,7 +53,6 @@ def _theme_css(theme: Theme) -> str:
             )
         return "\n".join(rules)
 
-    accent_light = _hsl(330, 0.7, 0.78)  # readable accent on the primary box
     return "\n".join(
         [
             faces("Book Serif", f.serif, (400, 600, 700)),
@@ -64,7 +64,7 @@ def _theme_css(theme: Theme) -> str:
             f"  --ink: {p.ink}; --ink-muted: {p.ink_muted}; --paper: {p.paper};",
             f"  --primary: {p.primary}; --primary-ink: {p.primary_ink};",
             f"  --primary-soft: {p.primary_soft};",
-            f"  --accent: {p.accent}; --accent2: {p.accent2}; --accent-light: {accent_light};",
+            f"  --accent: {p.accent}; --accent2: {p.accent2}; --accent-light: {p.accent_light};",
             f"  --tint: {p.tint}; --tint2: {p.tint2}; --line: {p.line};",
             "}",
         ]
@@ -112,17 +112,13 @@ def _chapter(
     ch: Chapter, idx: int, book: Book, segs: Sequence[Segment], theme: Theme, notes: _Notes
 ) -> str:
     p = theme.palette
-    strip = tapes_svg(
-        segs,
-        ch.start,
-        ch.end,
-        rows=3,
-        width=CONTENT_W,
-        height=15,
-        colors=p.speakers,
-        style=theme.tape_style,
-        seed=theme.seed + idx,
-    )
+    strip = ""
+    if theme.opener_art == "echo":
+        kind = theme.fallback_art if theme.art == "image" else theme.art
+        height = 6 if kind == "field" else 15
+        strip = art_markup(
+            kind, segs, ch.start, ch.end, CONTENT_W, height, theme, salt=idx + 1, rows=3
+        )
     head = (
         f'<div class="opener-head"><div class="opener-label">{_e(ch.label)}</div>'
         f'<h2>{_e(ch.title)}</h2><p class="dek">{_e(ch.dek)}</p></div>'
@@ -184,8 +180,10 @@ def _chapter(
     return "".join(out)
 
 
-def _cover(book: Book, segs: Sequence[Segment], theme: Theme) -> str:
-    p = theme.palette
+COVER_ART_SIZE = {"band": (210, 96), "panel": (178, 46), "column": (210, 92)}  # mm
+
+
+def _cover(book: Book, segs: Sequence[Segment], theme: Theme, image_uri: str | None = None) -> str:
     layout = theme.cover_layout
     title = _e(book.title)
     if book.title_accent and book.title.endswith(book.title_accent):
@@ -195,18 +193,8 @@ def _cover(book: Book, segs: Sequence[Segment], theme: Theme) -> str:
         f'<div class="cover-masthead"><b>Pods</b><span>{_e(book.podcast_title)} &middot; '
         f"Episode {book.episode_number}</span></div>"
     )
-    size = {"band": (210, 96), "panel": (178, 46), "column": (210, 92)}[layout]
-    tapes = tapes_svg(
-        segs,
-        0,
-        book.duration,
-        rows=theme.tape_rows,
-        width=size[0],
-        height=size[1],
-        colors=p.speakers,
-        style=theme.tape_style,
-        seed=theme.seed,
-    )
+    w, h = COVER_ART_SIZE[layout]
+    tapes = art_markup(theme.art, segs, 0, book.duration, w, h, theme, image_uri=image_uri)
     foot = (
         f'<div class="cover-foot"><span>{_e(" & ".join(book.speakers))} &middot; '
         f"{_ts(book.duration)} of conversation</span>"
@@ -268,17 +256,20 @@ def _closing(book: Book, notes: _Notes) -> str:
     )
 
 
-def render_html(book: Book, segments: Sequence[Segment], theme: Theme) -> str:
+def render_html(
+    book: Book, segments: Sequence[Segment], theme: Theme, cover_image_uri: str | None = None
+) -> str:
     notes = _Notes()
     chapters = "".join(
         _chapter(ch, i, book, segments, theme, notes) for i, ch in enumerate(book.chapters)
     )
-    cover = _cover(book, segments, theme)
+    cover = _cover(book, segments, theme, cover_image_uri)
     contents = _contents(book)
     closing = _closing(book, notes)
     classes = " ".join(
         [
             f"cover-{theme.cover_layout}",
+            f"art-{theme.art}",
             f"opener-{theme.opener_style}",
             f"pull-{theme.pull_style}",
             "caps" if theme.heading_caps else "nocaps",
@@ -292,11 +283,29 @@ def render_html(book: Book, segments: Sequence[Segment], theme: Theme) -> str:
     )
 
 
-def render_pdf(book: Book, segments: Sequence[Segment], theme: Theme, out_path: Path) -> Path:
+def render_pdf(
+    book: Book,
+    segments: Sequence[Segment],
+    theme: Theme,
+    out_path: Path,
+    artwork: Path | None = None,
+) -> Path:
+    """Render the book. `artwork` (the podcast's image) is used when the theme's art is "image"."""
     from weasyprint import HTML  # imported lazily: heavy, and only needed when rendering
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    HTML(string=render_html(book, segments, theme), base_url=str(out_path.parent)).write_pdf(
-        out_path
-    )
+    image_uri = None
+    if theme.art == "image" and artwork and artwork.is_file():
+        w, h = COVER_ART_SIZE[theme.cover_layout]
+        px = (round(w / 25.4 * 220), round(h / 25.4 * 220))  # 220 dpi
+        art = duotone(
+            artwork,
+            out_path.with_name(f"{out_path.stem}-cover.png"),
+            theme.palette.primary,
+            theme.palette.tint,
+            px,
+        )
+        image_uri = art.as_uri()
+    html = render_html(book, segments, theme, image_uri)
+    HTML(string=html, base_url=str(out_path.parent)).write_pdf(out_path)
     return out_path
