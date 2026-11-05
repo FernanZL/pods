@@ -1,5 +1,5 @@
 ---
-name: Recall
+name: Pods
 description: A local, cited research reader over a personal podcast library.
 colors:
   indigo-shell: "#261a57"
@@ -171,13 +171,13 @@ components:
     padding: "20px 24px"
 ---
 
-# Design System: Recall
+# Design System: Pods
 
 ## Overview
 
 **Creative North Star: "The Reference Apparatus"**
 
-Recall reads like a research paper that answers back. Every answer is a serif paragraph carrying numbered citation markers, and its reference list stands beside it the way a paper holds its sources: episode number first, title, a duration-exact speaker strip, then speaker and timestamp. The page is held by a deep indigo shell rail on a lavender-white ground, with hairline modules rather than cards and bubbles. The centered chat column with grey bubbles and source pills is the rejected model.
+Pods reads like a research paper that answers back. Every answer is a serif paragraph carrying numbered citation markers, and its reference list stands beside it the way a paper holds its sources: episode number first, title, a duration-exact speaker strip, then speaker and timestamp. The page is held by a deep indigo shell rail on a lavender-white ground, with hairline modules rather than cards and bubbles. The centered chat column with grey bubbles and source pills is the rejected model.
 
 Density is high and calm. Rules are 1px hairlines, radii are small (3 to 10px), and nothing floats: depth is tonal (ground, surface, sunk surface) plus 1px rings. Every time, count, and catalog number is set in tabular numerals so columns of figures align. Colour is spent on meaning only: indigo for structure and action, a pale-pink chip for a citation at rest, magenta for the one citation the reader is looking at, a blue/magenta/violet/teal series for speakers, and a stamp family for job state.
 
@@ -327,7 +327,7 @@ A duration-exact horizontal bar on a sunk track: each speaker turn is a block in
 Dense ledger: paper module with hairline border and 6px radius; sunk header row with 0.75rem semibold muted labels; 0.8125rem tabular cells with 8px by 12px padding and hairline rows; row hover shows the ground tone.
 
 ### Navigation
-Indigo top bar (52px) across every page: 28px serif monogram plus "Recall" wordmark (links home), then Chat / Library / Jobs as icon-and-label links in muted shell lavender; the active section turns shell ink with a 2px underline rule flush with the bar's bottom edge. A right-hand slot holds page actions (Chat's "Conversations" menu, which drops a 360px panel below the bar). No side rails. Below 768px the wordmark hides; below 420px link icons hide.
+Indigo top bar (52px) across every page: 28px serif monogram plus "Pods" wordmark (links home), then Chat / Library / Jobs as icon-and-label links in muted shell lavender; the active section turns shell ink with a 2px underline rule flush with the bar's bottom edge. A right-hand slot holds page actions (Chat's "Conversations" menu, which drops a 360px panel below the bar). No side rails. Below 768px the wordmark hides; below 420px link icons hide.
 
 ### Home Hero (signature)
 The indigo shell continues from the top bar into a full-width hero: serif "Ask your podcasts." at clamp(2.75rem, 6.2vw, 5.25rem), a one-line library summary in shell lavender, and a 58px paper ask field with an indigo Ask button. Behind it, speaker tapes: one row per recently indexed episode, each turn a rounded block at its exact duration in the tape colours (--tape-s0..3), drifting horizontally at different slow speeds and masked to fade behind the text. Rows are generated stand-ins until the library has episodes; reduced motion holds them still.

@@ -120,7 +120,7 @@ Each event has an `event:` name and JSON `data:`.
 The frontend reads the stream with `fetch` + `ReadableStream`, because EventSource cannot POST.
 
 ## Frontend routes
-All pages share one indigo top bar (Recall wordmark, Chat / Library / Jobs, and a page slot on the right).
+All pages share one indigo top bar (Pods wordmark, Chat / Library / Jobs, and a page slot on the right).
 - `/`: Home. Indigo hero with "Ask your podcasts." and an ask box (submits to `/chat?q=`), over drifting speaker tapes drawn from the most recently indexed episodes. Below: continue a conversation, recently indexed, grow the library.
 - `/chat`, `/chat/:conversationId`: Chat. The Conversations menu sits in the top-bar slot; answers have the References column beside them. `?q=` sends a question on arrival. Old `/c/:id` links redirect.
 - `/library`: "Your library" tab (feeds and the episode table, process with cost confirm) and a "Browse podcasts" tab (`?tab=browse`): name search and genre top charts from the Apple directory, one-click Add, RSS URL fallback.

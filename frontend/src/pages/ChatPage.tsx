@@ -782,7 +782,7 @@ export function ChatPage() {
               <div className="chat-empty-wrap">
                 <EmptyState
                   title="Your podcast library is empty"
-                  description="Build your library once in the Library tab: add an RSS feed, pick episodes, confirm the estimated cost, and let Recall download, diarize speakers, and index passages locally. Every future session opens straight into cited answers with no reprocessing."
+                  description="Build your library once in the Library tab: add an RSS feed, pick episodes, confirm the estimated cost, and let Pods download, diarize speakers, and index passages locally. Every future session opens straight into cited answers with no reprocessing."
                   action={
                     <Link to="/library" className="btn btn-primary">
                       Open Library to add episodes

@@ -5,7 +5,7 @@ primary_target: "frontend/src/pages/ChatPage.tsx"
 related_targets: ["frontend/src/pages/LibraryPage.tsx","frontend/src/pages/EpisodePage.tsx","frontend/src/pages/JobsPage.tsx"]
 ---
 
-# Surface brief: Recall web app (Chat home, Library, Episode, Jobs)
+# Surface brief: Pods web app (Chat home, Library, Episode, Jobs)
 
 Mode: Operate. Build path: code-led (no image generation).
 Audience/job: one owner chatting over a locally built podcast library; occasional bulk-processing sessions in Library.

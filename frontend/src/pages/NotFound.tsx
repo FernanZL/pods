@@ -7,7 +7,7 @@ export function NotFound() {
     <main id="main-content" className="page-container not-found-page">
       <EmptyState
         title="Page not found"
-        description="The address you requested does not match a view in Recall."
+        description="The address you requested does not match a view in Pods."
         action={
           <>
             <Link to="/chat" className="btn btn-primary">

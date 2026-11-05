@@ -5,17 +5,17 @@
   flex-shrink: 0;
 }
 
-@keyframes recall-spin {
+@keyframes pods-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
 .spinner-svg {
-  animation: recall-spin 700ms linear infinite;
+  animation: pods-spin 700ms linear infinite;
 }
 
-@keyframes recall-pulse {
+@keyframes pods-pulse {
   0%,
   100% {
     opacity: 1;
@@ -29,5 +29,5 @@
   display: block;
   background: var(--surface-sunk);
   border-radius: var(--radius-sm);
-  animation: recall-pulse 1.5s var(--ease-out) infinite;
+  animation: pods-pulse 1.5s var(--ease-out) infinite;
 }

@@ -1,4 +1,4 @@
-# Recall: podcast library chat
+# Pods: podcast library chat
 
 A local RAG chatbot over podcast episodes. Pick episodes from any RSS feed; Huberman Lab is the suggested default. The app downloads them, transcribes them **with per-speaker diarization**, and indexes them into a persistent local vector store. Then you chat with the whole library, and every answer cites the episode, who said it, and when.
 

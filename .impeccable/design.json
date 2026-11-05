@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-11-05T16:24:12+00:00",
-  "title": "Design System: Recall",
+  "title": "Design System: Pods",
   "extensions": {
     "colorMeta": {
       "indigo-shell": {
@@ -648,7 +648,7 @@
   ],
   "narrative": {
     "northStar": "The Reference Apparatus",
-    "overview": "**Creative North Star: \"The Reference Apparatus\"**\n\nRecall reads like a research paper that answers back. Every answer is a serif paragraph carrying numbered citation markers, and its reference list stands beside it the way a paper holds its sources: episode number first, title, a duration-exact speaker strip, then speaker and timestamp. The page is held by a deep indigo shell rail on a lavender-white ground, with hairline modules rather than cards and bubbles. The centered chat column with grey bubbles and source pills is the rejected model.\n\nDensity is high and calm. Rules are 1px hairlines, radii are small (3 to 10px), and nothing floats: depth is tonal (ground, surface, sunk surface) plus 1px rings. Every time, count, and catalog number is set in tabular numerals so columns of figures align. Colour is spent on meaning only: indigo for structure and action, a pale-pink chip for a citation at rest, magenta for the one citation the reader is looking at, a blue/magenta/violet/teal series for speakers, and a stamp family for job state.\n\nThe system follows the operating system's light or dark preference; both themes are defined from the same token names in `frontend/src/styles/tokens.css`, which is the contract file components consume.",
+    "overview": "**Creative North Star: \"The Reference Apparatus\"**\n\nPods reads like a research paper that answers back. Every answer is a serif paragraph carrying numbered citation markers, and its reference list stands beside it the way a paper holds its sources: episode number first, title, a duration-exact speaker strip, then speaker and timestamp. The page is held by a deep indigo shell rail on a lavender-white ground, with hairline modules rather than cards and bubbles. The centered chat column with grey bubbles and source pills is the rejected model.\n\nDensity is high and calm. Rules are 1px hairlines, radii are small (3 to 10px), and nothing floats: depth is tonal (ground, surface, sunk surface) plus 1px rings. Every time, count, and catalog number is set in tabular numerals so columns of figures align. Colour is spent on meaning only: indigo for structure and action, a pale-pink chip for a citation at rest, magenta for the one citation the reader is looking at, a blue/magenta/violet/teal series for speakers, and a stamp family for job state.\n\nThe system follows the operating system's light or dark preference; both themes are defined from the same token names in `frontend/src/styles/tokens.css`, which is the contract file components consume.",
     "keyCharacteristics": [
       "Indigo shell rail (72px) on lavender-white ground; three-column chat (280px conversations, flexible centre, 380px references).",
       "Serif for reading (answers, summaries, episode titles); sans for all UI.",

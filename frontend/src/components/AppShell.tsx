@@ -29,11 +29,11 @@ export function AppShell({ children }: AppShellProps) {
       </a>
 
       <header className="app-topbar">
-        <Link to="/" className="app-brand" aria-label="Recall home">
+        <Link to="/" className="app-brand" aria-label="Pods home">
           <span className="app-logo" aria-hidden="true">
-            R
+            P
           </span>
-          <span className="app-wordmark">Recall</span>
+          <span className="app-wordmark">Pods</span>
         </Link>
 
         <nav className="app-nav-links" aria-label="Primary">
