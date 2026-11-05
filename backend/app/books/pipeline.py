@@ -134,8 +134,10 @@ def estimate_cost(transcript: Transcript) -> tuple[int, int, int, float]:
     """(words, chapters, target words, USD) using the configured LLM prices."""
     s = get_settings()
     words, chapters, target = sizing(transcript)
-    tok_in = words * 1.35 * 2 + 3000 + 1800 * chapters * 3  # plan + section slices + prompts
-    tok_out = 4000 + target * 1.45
+    # plan + section slices + prompts, then the editor (book + transcript) and ~20% rewrites
+    tok_in = words * 1.35 * 2 + 3000 + 1800 * chapters * 3
+    tok_in += (words + target) * 1.35 + 3000 + 0.2 * (words * 1.35 + 1800 * chapters * 3)
+    tok_out = 4000 + target * 1.45 + 3000 + 0.2 * target * 1.45
     usd = tok_in / 1e6 * s.price_llm_input_per_mtok + tok_out / 1e6 * s.price_llm_output_per_mtok
     return words, chapters, target, round(usd, 4)
 
@@ -379,6 +381,144 @@ def _write_section(plan: Plan, ci: int, si: int, transcript: Transcript, ctx) ->
         max_tokens=int(sec.target_words * 2.2) + 1500,
     )
     return _to_blocks(data, transcript)
+
+
+# ----------------------------------------------------------------------- editor
+
+
+def _section_text(w: Written) -> str:
+    """Readable draft of a section: quotes inline with their (verified) attribution."""
+    out = []
+    for b in w.blocks:
+        if isinstance(b, Paragraph):
+            out.append(
+                "".join(
+                    r
+                    if isinstance(r, str)
+                    else f"\u201c{r.text}\u201d [{r.speaker} {_ts(r.start)}]"
+                    for r in b.runs
+                )
+            )
+        elif isinstance(b, PullQuote):
+            out.append(f"PULL QUOTE: \u201c{b.quote.text}\u201d [{b.quote.speaker}]")
+        elif isinstance(b, QuotePair):
+            out.append(f"PAIR: \u201c{b.left.text}\u201d / \u201c{b.right.text}\u201d")
+        elif isinstance(b, Callout):
+            out.append(f"CALLOUT {b.title}: " + "; ".join(b.items))
+    return "\n\n".join(out)
+
+
+def _review_messages(plan: Plan, written: dict[tuple[int, int], Written], transcript, ctx):
+    system = """You are the fact-checking editor of a long-form book written from a podcast
+conversation. Quotes in the draft have already been verified word for word; your job is the
+NARRATION around them. Compare every section with the transcript and report only real
+problems:
+- misattribution: an idea, claim or story credited to the wrong person
+- factual: numbers, names, dates, mechanisms or details that differ from what was said
+- overstatement: a claim stated more strongly or generally than the speaker made it
+- repetition: a point substantially repeated from an earlier section
+- housekeeping: sponsors, ads, links, "subscribe", intros/outros narrated as content
+- off_topic: content not in this section's transcript range, or invented material
+Do not report style preferences. Cite transcript evidence by segment number.
+
+Return ONLY JSON:
+{"summary": "one or two sentences on overall accuracy",
+ "issues": [{"section": "3.2", "type": "misattribution|factual|overstatement|repetition|
+   housekeeping|off_topic", "severity": "high|medium|low", "problem": "what is wrong",
+   "evidence": "[segment numbers] and the words that show it", "fix": "what the corrected
+   text must say"}]}
+Use an empty list when the book is accurate."""
+    parts = []
+    for ci, ch in enumerate(plan.chapters):
+        for si, sec in enumerate(ch.sections):
+            parts.append(
+                f"## {ci + 1}.{si + 1} {ch.title} / {sec.heading} (segments {sec.first}-{sec.last})"
+                f"\n{_section_text(written[(ci, si)])}"
+            )
+    user = (
+        f"Book: {plan.title}\nPodcast: {ctx['podcast']}, episode {ctx['number']}: {ctx['title']}"
+        "\n\nDRAFT BOOK:\n" + "\n\n".join(parts) + "\n\nTRANSCRIPT:\n" + _numbered(transcript)
+    )
+    return [{"role": "system", "content": system}, {"role": "user", "content": user}]
+
+
+def _rewrite_section(
+    plan: Plan, ci: int, si: int, transcript: Transcript, ctx, draft: Written, notes: list[dict]
+) -> Written:
+    msgs = _section_messages(plan, ci, si, transcript, ctx)
+    issues = "\n".join(
+        f"- [{n.get('type')}] {n.get('problem')} Evidence: {n.get('evidence')}. Fix: {n.get('fix')}"
+        for n in notes
+    )
+    msgs[1]["content"] += (
+        f"\n\nPREVIOUS DRAFT OF THIS SECTION:\n{_section_text(draft)}\n\n"
+        "EDITOR'S NOTES - rewrite the section fixing every note, keep everything that is "
+        f"correct, keep the same length and quoting rules:\n{issues}"
+    )
+    sec = plan.chapters[ci].sections[si]
+    data = _ask_json(msgs, max_tokens=int(sec.target_words * 2.2) + 1500)
+    return _to_blocks(data, transcript)
+
+
+def _words(w: Written) -> int:
+    return sum(
+        len((r if isinstance(r, str) else r.text).split())
+        for b in w.blocks
+        if isinstance(b, Paragraph)
+        for r in b.runs
+    )
+
+
+@dataclass
+class Review:
+    summary: str
+    issues: list[dict[str, Any]]
+    fixed_sections: list[str]
+
+
+def _editor(
+    plan: Plan,
+    written: dict[tuple[int, int], Written],
+    transcript: Transcript,
+    ctx: dict[str, str],
+    pool: ThreadPoolExecutor,
+    on_progress: ProgressFn,
+) -> Review:
+    """Review the narration against the transcript; rewrite flagged sections once."""
+    try:
+        data = _ask_json(_review_messages(plan, written, transcript, ctx), max_tokens=8000)
+    except Exception as exc:  # the editor improves a book; it must not sink it
+        log.warning("book editor unavailable: %s", exc)
+        return Review(f"Editor unavailable: {exc}", [], [])
+    keys = {f"{ci + 1}.{si + 1}": (ci, si) for ci, si in written}
+    issues = [
+        i for i in (data.get("issues") or [])
+        if isinstance(i, dict) and str(i.get("section")) in keys
+    ]  # fmt: skip
+    by_section: dict[tuple[int, int], list[dict]] = {}
+    for issue in issues:
+        if issue.get("severity") in ("high", "medium"):
+            by_section.setdefault(keys[str(issue["section"])], []).append(issue)
+    fixed: list[str] = []
+    if by_section:
+        on_progress(0.86, f"Editor: fixing {len(by_section)} sections")
+        futures = {
+            pool.submit(_rewrite_section, plan, *k, transcript, ctx, written[k], notes): k
+            for k, notes in by_section.items()
+        }
+        for fut, k in futures.items():
+            try:
+                new = fut.result()
+            except Exception as exc:
+                log.warning("book editor: rewrite of %s failed: %s", k, exc)
+                continue
+            # keep the rewrite only if it did not collapse the section
+            if _words(new) >= 0.6 * _words(written[k]):
+                written[k] = new
+                fixed.append(f"{k[0] + 1}.{k[1] + 1}")
+    for issue in issues:
+        issue["fixed"] = str(issue.get("section")) in fixed
+    return Review(str(data.get("summary") or ""), issues, fixed)
 
 
 # ----------------------------------------------------------------- fake (offline) mode
@@ -667,11 +807,24 @@ def build_book(book_id: int, on_progress: ProgressFn) -> None:
                     written[pending.pop(fut)] = fut.result()
                 elapsed = storage.fmt_ts(time.monotonic() - started)
                 on_progress(
-                    0.1 + 0.78 * len(written) / len(keys),
+                    0.1 + 0.68 * len(written) / len(keys),
                     f"Writing: {len(written)}/{len(keys)} sections · {elapsed} elapsed",
                 )
+        if fake:
+            review = Review("Editor skipped in demo mode.", [], [])
+        else:
+            on_progress(0.8, "Editor checking the narration against the transcript")
+            review = _editor(plan, written, transcript, ctx, pool, on_progress)
     finally:
         pool.shutdown(wait=False, cancel_futures=True)
+    (bdir / "review.json").write_text(
+        json.dumps(
+            {"summary": review.summary, "fixed_sections": review.fixed_sections,
+             "issues": review.issues},
+            ensure_ascii=False, indent=1,
+        ),
+        "utf-8",
+    )  # fmt: skip
 
     book = _assemble(plan, written, transcript, ctx)
     (bdir / "book.json").write_text(json.dumps(book_to_dict(book), ensure_ascii=False), "utf-8")
@@ -683,6 +836,9 @@ def build_book(book_id: int, on_progress: ProgressFn) -> None:
         row.words = word_count(book)
         row.quotes = sum(w.quotes for w in written.values())
         row.rejected_quotes = sum(w.rejected for w in written.values())
+        row.review_issues = len(review.issues)
+        row.review_fixed = sum(1 for i in review.issues if i.get("fixed"))
+        row.review_summary = review.summary[:600]
         session.add(row)
         session.commit()
 

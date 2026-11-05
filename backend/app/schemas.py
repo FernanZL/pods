@@ -88,6 +88,21 @@ class SegmentOut(BaseModel):
     text: str
 
 
+class CheckIssue(BaseModel):
+    kind: str  # gap | coverage | loop | noise_speaker | one_speaker | speaker_share |
+    #            names_fixed | names_doubt | empty
+    severity: Literal["high", "medium", "low"]
+    message: str
+    at: float | None  # seconds, when the issue has a position
+
+
+class TranscriptCheck(BaseModel):
+    ok: bool
+    issues: list[CheckIssue]
+    names_checked: bool
+    checked_at: str
+
+
 class EpisodeDetail(EpisodeOut):
     audio_url: str  # original remote URL
     local_audio: bool
@@ -97,6 +112,7 @@ class EpisodeDetail(EpisodeOut):
     summarized_at: datetime | None  # True → GET /api/episodes/{id}/audio serves it
     segments: list[SegmentOut]  # [] until transcribed
     summary_markdown: str | None
+    transcript_check: TranscriptCheck | None = None
 
 
 class SelectionRequest(BaseModel):
@@ -278,6 +294,9 @@ class BookOut(BaseModel):
     pages: int
     quotes: int
     rejected_quotes: int
+    review_issues: int
+    review_fixed: int
+    review_summary: str
     error: str | None
     created_at: datetime
     updated_at: datetime

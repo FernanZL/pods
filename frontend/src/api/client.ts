@@ -1,6 +1,7 @@
 import type {
   Book,
   BookEstimate,
+  TranscriptCheck,
   DiscoverGenre,
   DiscoverPodcast,
   EpisodeCitationRef,
@@ -257,6 +258,10 @@ export function deleteJob(id: number): Promise<void> {
 /** Delete every finished (done / failed / cancelled) job record. */
 export function clearFinishedJobs(): Promise<{ deleted: number }> {
   return request<{ deleted: number }>('/jobs', { method: 'DELETE' })
+}
+
+export function checkEpisode(id: number): Promise<TranscriptCheck> {
+  return request<TranscriptCheck>(`/episodes/${id}/check`, { method: 'POST' })
 }
 
 // --- Books ---

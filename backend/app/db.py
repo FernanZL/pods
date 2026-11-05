@@ -41,7 +41,38 @@ def set_engine(engine: Engine) -> None:
 def init_db() -> None:
     from app import models  # noqa: F401  (register tables)
 
-    SQLModel.metadata.create_all(get_engine())
+    engine = get_engine()
+    SQLModel.metadata.create_all(engine)
+    _add_missing_columns(engine)
+
+
+def _add_missing_columns(engine: Engine) -> None:
+    """Tiny forward-only migration: add columns that models gained since the table was
+    created (SQLite ALTER TABLE ADD COLUMN). Existing data is untouched."""
+    from sqlalchemy import inspect, text
+
+    insp = inspect(engine)
+    with engine.begin() as conn:
+        for table in SQLModel.metadata.sorted_tables:
+            if not insp.has_table(table.name):
+                continue
+            existing = {c["name"] for c in insp.get_columns(table.name)}
+            for col in table.columns:
+                if col.name in existing:
+                    continue
+                ddl_type = col.type.compile(dialect=engine.dialect)
+                default = ""
+                if col.default is not None and getattr(col.default, "is_scalar", False):
+                    value = col.default.arg
+                    if isinstance(value, bool):
+                        value = int(value)
+                    if isinstance(value, int | float):
+                        default = f" DEFAULT {value}"
+                    elif isinstance(value, str):
+                        default = " DEFAULT '" + value.replace("'", "''") + "'"
+                conn.execute(
+                    text(f'ALTER TABLE "{table.name}" ADD COLUMN "{col.name}" {ddl_type}{default}')
+                )
 
 
 def get_session() -> Iterator[Session]:

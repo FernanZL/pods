@@ -332,5 +332,12 @@ def transcribe_episode(
             session.add(ep)
             session.commit()
 
+    on_progress(0.97, "Checking the transcript")
+    try:
+        from app.services.transcript_check import run_check
+
+        run_check(episode_id)
+    except Exception as exc:  # a failed check never fails the transcription
+        log.warning("episode %s: transcript check failed: %s", episode_id, exc)
     on_progress(1.0, "Transcription complete")
     return transcript

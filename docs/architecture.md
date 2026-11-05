@@ -80,6 +80,7 @@ Backends (`providers/transcription/`):
 | DELETE `/podcasts/{id}` | `?delete_files=true` | 204. Removes episodes, vectors, files | ingest |
 | GET `/episodes` | `podcast_id?, q?, search_description=false, status?, limit=50, offset=0` | `EpisodeList`, newest first | ingest |
 | GET `/episodes/{id}` | | `EpisodeDetail` | ingest |
+| POST `/episodes/{id}/check` | | `TranscriptCheck`: re-run the transcript health check | ingest |
 | GET `/episodes/{id}/citations` | | `EpisodeCitationRef[]`: saved answers that cited this episode (transcript back-links) | ingest |
 | GET `/episodes/{id}/audio` | | audio file (`FileResponse`, supports Range) | ingest |
 | POST `/episodes/estimate` | `SelectionRequest` | `CostEstimate` | ingest |
@@ -139,7 +140,15 @@ All pages share one indigo top bar (Pods wordmark, Chat / Library / Jobs, and a 
 - `pipeline.py`: size (chapters ≈ minutes / 14, target ≈ 70% of spoken words) → one planning call over the whole numbered transcript (titles, chapters, sections mapped to segment ranges, glossary, quote picks) → sections written in parallel (`BOOK_PARALLELISM`), each from its own transcript slice with a word target proportional to it → quotes verified → `book.json` → render.
 - `verify.py`: quotes are marked `⟦…⟧` by the writer and matched word for word (case/punctuation-insensitive) to a segment; attribution comes from that segment. Unverifiable inline quotes become plain narrative; unverifiable pull quotes are dropped.
 - `theme.py`: a seed picks one of 8 colour families (contrast-guarded), 4 font pairs, cover art (tapes, rings, dots, waveform, mosaic, stripes, plain field, duotoned podcast artwork), cover layout, opener style and ornaments. `render.py` + `book.css` typeset with WeasyPrint; `art.py` / `tapes.py` draw the art from the conversation.
-- Files: `data/podcasts/<podcast>/<episode>/books/<id>/{plan.json, book.json, book.pdf, cover.png}`.
+- Editor: after writing, one call reviews the narration against the full transcript (misattribution, factual slips, overstatement, repetition, housekeeping, off-topic). High/medium issues trigger one targeted rewrite of just those sections, re-verified; a rewrite that collapses the section is discarded. Results in `review.json` and on the book card.
+- Files: `data/podcasts/<podcast>/<episode>/books/<id>/{plan.json, book.json, review.json, book.pdf, cover.png}`.
+- `scripts.repair_book <id>`: re-check and re-render an existing book with the current rules (no model calls).
+
+## Transcript check (`services/transcript_check.py`)
+Runs at the end of every transcription and on demand. Mechanical: gaps ≥ 45 s, transcript ending early, repeated-text loops, one voice holding > 95%, stray noise labels. One small model call confirms speaker names; a high-confidence swap is corrected in the transcript, anything less is reported. Never blocks; results live in `Episode.transcript_check` and show on the episode page.
+
+## Database migrations
+`db.init_db` adds columns that models gained since a table was created (SQLite `ADD COLUMN`, existing rows keep their data and get the column default).
 
 ## Fake / demo mode
 Set `LLM_PROVIDER=fake TRANSCRIBER=fake EMBEDDINGS_PROVIDER=fake DOWNLOAD_MODE=fake`.

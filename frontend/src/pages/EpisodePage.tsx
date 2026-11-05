@@ -25,6 +25,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CostConfirmDialog } from '../components/CostConfirmDialog'
 import { EmptyState } from '../components/EmptyState'
 import { MakeBookButton } from '../components/MakeBookButton'
+import { TranscriptCheckPanel } from '../components/TranscriptCheckPanel'
 import { ErrorBanner } from '../components/ErrorBanner'
 import { IconExternalLink } from '../components/Icons'
 import { SpeakerStrip } from '../components/SpeakerStrip'
@@ -750,6 +751,14 @@ export function EpisodePage() {
       ) : null}
 
       {/* Diarized Transcript */}
+      {hasTranscript ? (
+        <TranscriptCheckPanel
+          episodeId={episode.id}
+          check={episode.transcript_check}
+          onSeek={(sec) => seekTo(sec, { scrollTranscript: true })}
+        />
+      ) : null}
+
       <section className="episode-transcript-section" aria-labelledby="transcript-heading">
         <div className="episode-transcript-head">
           <h2 id="transcript-heading" className="episode-section-heading">

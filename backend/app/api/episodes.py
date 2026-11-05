@@ -24,6 +24,7 @@ from app.schemas import (
     JobOut,
     SegmentOut,
     SelectionRequest,
+    TranscriptCheck,
 )
 from app.services.estimate import estimate
 
@@ -225,6 +226,7 @@ def get_episode(episode_id: int, session: SessionDep) -> EpisodeDetail:
         transcribed_at=episode.transcribed_at,
         indexed_at=episode.indexed_at,
         summarized_at=episode.summarized_at,
+        transcript_check=episode.transcript_check,
         segments=segments,
         summary_markdown=summary_markdown,
     )
@@ -281,6 +283,22 @@ def summarize_episode_endpoint(
     assert job.id is not None
     worker.enqueue(job.id)
     return job_to_out(session, job)
+
+
+@router.post("/episodes/{episode_id}/check", response_model=TranscriptCheck)
+async def check_episode(episode_id: int, session: SessionDep) -> TranscriptCheck:
+    """Re-run the transcript health check (mechanical checks + speaker-name check)."""
+    from fastapi.concurrency import run_in_threadpool
+
+    from app.services.transcript_check import run_check
+
+    episode = session.get(Episode, episode_id)
+    if episode is None:
+        raise HTTPException(status_code=404, detail="Episode not found")
+    if not episode.transcript_path:
+        raise HTTPException(status_code=409, detail="This episode has no transcript yet")
+    result = await run_in_threadpool(run_check, episode_id)
+    return TranscriptCheck.model_validate(result)
 
 
 @router.post("/episodes/{episode_id}/reindex", response_model=JobOut)

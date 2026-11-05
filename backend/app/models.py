@@ -52,6 +52,8 @@ class Episode(SQLModel, table=True):
     passage_count: int = 0
     summary_path: str | None = None
     summarized_at: datetime | None = None
+    # Transcript health check (see services/transcript_check.py): {"ok", "issues", ...}
+    transcript_check: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
 
 
 class Job(SQLModel, table=True):
@@ -111,6 +113,9 @@ class Book(SQLModel, table=True):
     pages: int = 0
     quotes: int = 0  # verified quotes in the book
     rejected_quotes: int = 0  # writer quotes that failed verification (kept as narrative)
+    review_issues: int = 0  # problems the editor found in the narration
+    review_fixed: int = 0  # ...of which were fixed by rewriting the section
+    review_summary: str = ""
     dir_path: str | None = None  # relative to data_dir
     error: str | None = None
     created_at: datetime = Field(default_factory=utcnow)

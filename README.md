@@ -65,7 +65,9 @@ Fake mode (`LLM_PROVIDER=fake TRANSCRIBER=fake EMBEDDINGS_PROVIDER=fake DOWNLOAD
 
 ## Books
 
-Any transcribed episode can become a long-form PDF book: open the episode and choose **Make a book**. Pods plans chapters from the whole conversation, writes each section from its own stretch of the transcript (a 2-hour episode becomes roughly 8–10 chapters and 15–20k words), checks every quote word for word against the recording, and typesets it with its own design: one of 8 colour families, 4 font pairings and 8 kinds of cover art, several drawn from the conversation itself. **Reshuffle design** in Books gives the same text a new look for free. Writing a book with `gpt-6-luna` costs a few cents.
+Any transcribed episode can become a long-form PDF book: open the episode and choose **Make a book**. Pods plans chapters from the whole conversation, writes each section from its own stretch of the transcript (a 2-hour episode becomes roughly 8–10 chapters and 15–20k words), checks every quote word for word against the recording, and typesets it with its own design: one of 8 colour families, 4 font pairings and 8 kinds of cover art, several drawn from the conversation itself. Before you see it, an editor pass checks the narration against the transcript (who said what, numbers, overstatement, repetition) and rewrites only the sections it flags. **Reshuffle design** in Books gives the same text a new look for free.
+
+Every transcription also gets an automatic check (gaps, repeated text, speaker problems, and a quick confirmation of the speaker names), shown on the episode page. Writing a book with `gpt-6-luna` costs a few cents.
 
 ## Costs and models
 

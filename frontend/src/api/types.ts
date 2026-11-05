@@ -64,6 +64,20 @@ export interface Segment {
   text: string
 }
 
+export interface CheckIssue {
+  kind: string
+  severity: 'high' | 'medium' | 'low'
+  message: string
+  at: number | null
+}
+
+export interface TranscriptCheck {
+  ok: boolean
+  issues: CheckIssue[]
+  names_checked: boolean
+  checked_at: string
+}
+
 export interface EpisodeDetail extends Episode {
   audio_url: string
   local_audio: boolean
@@ -73,6 +87,7 @@ export interface EpisodeDetail extends Episode {
   summarized_at: ISODate | null
   segments: Segment[]
   summary_markdown: string | null
+  transcript_check: TranscriptCheck | null
 }
 
 export interface SelectionRequest {
@@ -230,6 +245,9 @@ export interface Book {
   pages: number
   quotes: number
   rejected_quotes: number
+  review_issues: number
+  review_fixed: number
+  review_summary: string
   error: string | null
   created_at: ISODate
   updated_at: ISODate

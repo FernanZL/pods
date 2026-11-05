@@ -144,6 +144,13 @@ function BookCard({ book, onDelete }: { book: Book; onDelete: () => void }) {
           {book.podcast_title} · {fmtRelativeDate(book.created_at)}
         </span>
         {stats ? <span className="book-stats">{stats}</span> : null}
+        {ready && book.review_summary ? (
+          <span className="book-editor" title={book.review_summary}>
+            {book.review_issues === 0
+              ? 'Editor: no accuracy issues found'
+              : `Editor: ${fmtNumber(book.review_issues)} ${book.review_issues === 1 ? 'issue' : 'issues'} found, ${fmtNumber(book.review_fixed)} fixed`}
+          </span>
+        ) : null}
         {ready ? (
           <span className="book-design">
             {book.family} · {book.art} cover · {fmtNumber(book.quotes)} verified quotes

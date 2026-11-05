@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-query'
 import {
   cancelJob,
+  checkEpisode,
   createBook,
   deleteBook,
   estimateBook,
@@ -318,6 +319,17 @@ export function useCancelJob() {
       void qc.invalidateQueries({ queryKey: queryKeys.jobsAll })
       void qc.invalidateQueries({ queryKey: queryKeys.episodesAll })
       void qc.invalidateQueries({ queryKey: queryKeys.episodeAll })
+    },
+  })
+}
+
+/** Re-run the transcript health check for an episode. */
+export function useCheckEpisode() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => checkEpisode(id),
+    onSuccess: (_d, id) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.episode(id) })
     },
   })
 }

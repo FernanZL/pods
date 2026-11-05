@@ -126,6 +126,26 @@ class _StubLLM:
                     ],
                 }  # fmt: skip
             )
+        if "fact-checking editor" in system:
+            self.calls.append("review")
+            return json.dumps({"summary": "One misattribution.", "issues": [
+                {"section": "1.1", "type": "misattribution", "severity": "high",
+                 "problem": "Credited to the wrong speaker", "evidence": "[2]", "fix": "Say the host"},
+                {"section": "9.9", "type": "factual", "severity": "high", "problem": "bogus id"},
+            ]})  # fmt: skip
+        if "EDITOR'S NOTES" in messages[1]["content"]:
+            self.calls.append("rewrite")
+            return json.dumps(
+                {
+                    "blocks": [
+                        {
+                            "type": "p",
+                            "text": "A corrected account: the host "
+                            "asks, ⟦Segment number 2 explains how morning light⟧, and the guest answers.",
+                        }
+                    ]
+                }
+            )
         self.calls.append("section")
         slice_first = int(messages[1]["content"].split("TRANSCRIPT SLICE:\n[")[1].split("]")[0])
         return json.dumps(
@@ -166,8 +186,11 @@ def test_llm_path_verifies_quotes_and_covers_the_tail(session, monkeypatch, sett
     row = session.get(Book, book.id)
     assert row is not None and row.status == "ready"
     assert stub.calls.count("plan") == 1 and stub.calls.count("section") == 3
-    assert row.quotes == 3  # one verified inline quote per section
-    assert row.rejected_quotes == 6  # invented inline + invented pull, per section
+    assert stub.calls.count("review") == 1 and stub.calls.count("rewrite") == 1
+    assert row.review_issues == 1 and row.review_fixed == 1  # the bogus section id is dropped
+    review = json.loads((storage.to_abs(row.dir_path) / "review.json").read_text())
+    assert review["fixed_sections"] == ["1.1"] and review["issues"][0]["fixed"] is True
+    assert row.rejected_quotes == 4  # 2 per unrewritten section; the rewrite has none
     data = json.loads((storage.to_abs(row.dir_path) / "book.json").read_text())
     # the last section was stretched to the end of the conversation
     assert data["chapters"][-1]["end"] == 29 * 30.0 + 28
@@ -192,3 +215,55 @@ def test_housekeeping_closers_are_refused_and_minor_speakers_dropped() -> None:
     assert not pipeline._is_housekeeping(
         Quote("Attention makes ordinary things strange.", "Guest", 400), 901
     )
+
+
+def test_transcript_check_finds_gaps_loops_and_fixes_swapped_names(
+    session, monkeypatch, settings
+) -> None:
+    from app.services import transcript_check
+
+    segs = [Segment("A", 0, 10, "Welcome to the show, I'm the host and today my guest is Ana.")]
+    segs += [Segment("B", 10 + i, 11 + i, "Thanks for having me here today.") for i in range(3)]
+    segs += [Segment("B", 400, 420, "Back after a long silence in the recording.")]
+    tr = Transcript(episode_id=1, model="m", speakers={"A": "Ana", "B": "Host"}, segments=segs)
+    kinds = {i["kind"] for i in transcript_check.mechanical_issues(tr, audio_seconds=900)}
+    assert {"gap", "loop", "coverage"} <= kinds
+
+    ep_id = _episode(session)
+    ep = session.get(Episode, ep_id)
+    path = storage.to_abs(ep.transcript_path)
+
+    class _Names:
+        def complete(self, messages, *, max_tokens=None, json_object=False):
+            return json.dumps(
+                {
+                    "ok": False,
+                    "confidence": "high",
+                    "names": {"A": "Guest", "B": "Host"},
+                    "reason": "swapped",
+                }
+            )
+
+    monkeypatch.setattr(transcript_check, "get_llm", lambda: _Names())
+    monkeypatch.setattr(settings, "llm_provider", "openai")
+    result = transcript_check.run_check(ep_id)
+    assert result["names_checked"] and any(i["kind"] == "names_fixed" for i in result["issues"])
+    assert storage.read_transcript(path).speakers == {"A": "Guest", "B": "Host"}
+
+
+def test_add_missing_columns_migrates_old_tables(tmp_path) -> None:
+    from sqlalchemy import create_engine, inspect, text
+
+    from app import db
+
+    eng = create_engine(f"sqlite:///{tmp_path / 'old.db'}")
+    with eng.begin() as c:
+        c.execute(
+            text("CREATE TABLE book (id INTEGER PRIMARY KEY, episode_id INTEGER, seed INTEGER)")
+        )
+        c.execute(text("INSERT INTO book (id, episode_id, seed) VALUES (1, 1, 5)"))
+    db._add_missing_columns(eng)
+    cols = {c["name"] for c in inspect(eng).get_columns("book")}
+    assert {"review_issues", "review_summary", "status"} <= cols
+    with eng.begin() as c:
+        assert c.execute(text("SELECT review_issues, status FROM book")).one() == (0, "queued")
