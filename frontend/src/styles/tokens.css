@@ -33,8 +33,7 @@
   --hairline: 1px solid var(--line);
 
   /* layout */
-  --rail-w: 72px;
-  --convs-w: 280px;
+  --topbar-h: 52px;
   --refs-w: 380px;
 
   /* motion */
@@ -73,6 +72,11 @@
   --speaker-3: #7a4fd0;
   --speaker-4: #1f8fb0;
   --speaker-other: #8a84a8;
+  /* speakers drawn on the indigo shell (home tapes); same in both themes */
+  --tape-s0: #7fa2ff;
+  --tape-s1: #e57cc4;
+  --tape-s2: #a98bf0;
+  --tape-s3: #5cc3e0;
 
   /* states (stamps) */
   /* states stay inside the indigo / blue / violet / magenta family; red only for failure */

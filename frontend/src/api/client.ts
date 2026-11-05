@@ -1,4 +1,6 @@
 import type {
+  DiscoverGenre,
+  DiscoverPodcast,
   EpisodeCitationRef,
   AppConfig,
   Conversation,
@@ -245,6 +247,29 @@ export function cancelJob(id: number): Promise<Job> {
 }
 
 /** POST /api/jobs/{id}/retry */
+/** Delete one finished job record (history only). */
+export function deleteJob(id: number): Promise<void> {
+  return request<void>(`/jobs/${encodeURIComponent(String(id))}`, { method: 'DELETE' })
+}
+
+/** Delete every finished (done / failed / cancelled) job record. */
+export function clearFinishedJobs(): Promise<{ deleted: number }> {
+  return request<{ deleted: number }>('/jobs', { method: 'DELETE' })
+}
+
+export function getDiscoverGenres(): Promise<DiscoverGenre[]> {
+  return request<DiscoverGenre[]>('/discover/genres')
+}
+
+export function searchDirectory(q: string): Promise<DiscoverPodcast[]> {
+  return request<DiscoverPodcast[]>(`/discover/search?q=${encodeURIComponent(q)}&limit=24`)
+}
+
+export function getTopPodcasts(genreId: number | null): Promise<DiscoverPodcast[]> {
+  const genre = genreId ? `genre_id=${genreId}&` : ''
+  return request<DiscoverPodcast[]>(`/discover/top?${genre}limit=24`)
+}
+
 export function retryJob(id: number): Promise<Job> {
   return request<Job>(`/jobs/${encodeURIComponent(String(id))}/retry`, {
     method: 'POST',

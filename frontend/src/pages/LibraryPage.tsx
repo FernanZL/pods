@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import {
   isJobActive,
-  useAddPodcast,
   useConfig,
   useDeletePodcast,
   useEpisodes,
@@ -20,11 +19,12 @@ import type {
   Podcast,
   SelectionRequest,
 } from '../api/types'
+import { BrowsePodcasts } from '../components/BrowsePodcasts'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CostConfirmDialog } from '../components/CostConfirmDialog'
 import { EmptyState } from '../components/EmptyState'
 import { ErrorBanner } from '../components/ErrorBanner'
-import { IconRefresh, IconSearch, IconTrash } from '../components/Icons'
+import { IconPlus, IconRefresh, IconSearch, IconTrash } from '../components/Icons'
 import { Skeleton, Spinner } from '../components/Spinner'
 import { StatusStamp } from '../components/StatusStamp'
 import { useToast } from '../components/ToastContext'
@@ -32,7 +32,6 @@ import { fmtDate, fmtDuration, fmtEpNumber, fmtNumber } from '../utils/format'
 import { buildSpeakerColorMap, getSpeakerColor } from '../utils/speakers'
 import './LibraryPage.css'
 
-const HUBERMAN_RSS = 'https://feeds.megaphone.fm/hubermanlab'
 const PAGE_SIZE = 50
 
 export function LibraryPage() {
@@ -47,13 +46,18 @@ export function LibraryPage() {
   const { data: jobs } = useJobs()
 
   // Feed management state
-  const [rssInput, setRssInput] = useState('')
   const [feedError, setFeedError] = useState<string | null>(null)
   const [refreshingId, setRefreshingId] = useState<number | null>(null)
   const [deletingPodcast, setDeletingPodcast] = useState<Podcast | null>(null)
-  const rssInputRef = useRef<HTMLInputElement | null>(null)
 
-  const addPodcast = useAddPodcast()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab = searchParams.get('tab') === 'browse' ? 'browse' : 'library'
+  const setTab = (next: 'library' | 'browse') => {
+    const params = new URLSearchParams(searchParams)
+    if (next === 'browse') params.set('tab', 'browse')
+    else params.delete('tab')
+    setSearchParams(params, { replace: true })
+  }
   const refreshPodcast = useRefreshPodcast()
   const deletePodcast = useDeletePodcast()
 
@@ -145,32 +149,6 @@ export function LibraryPage() {
   }, [somePageSelected])
 
   const selectedCount = allMatchingSelected ? totalMatching : selectedIds.size
-
-  const handleAddFeed = (e: FormEvent) => {
-    e.preventDefault()
-    const url = rssInput.trim()
-    if (!url || addPodcast.isPending) return
-    setFeedError(null)
-    addPodcast.mutate(url, {
-      onSuccess: (created) => {
-        setRssInput('')
-        pushToast({
-          message: `Added "${created.title}" (${fmtNumber(created.episode_count)} episodes).`,
-        })
-      },
-      onError: (err) => {
-        setFeedError(
-          err instanceof ApiError ? err.detail : 'Could not add RSS feed. Check the URL and retry.',
-        )
-      },
-    })
-  }
-
-  const handleQuickFillHuberman = () => {
-    setRssInput(HUBERMAN_RSS)
-    setFeedError(null)
-    rssInputRef.current?.focus()
-  }
 
   const handleRefreshPodcast = (podcast: Podcast) => {
     setFeedError(null)
@@ -322,17 +300,58 @@ export function LibraryPage() {
   const totalPages = Math.max(1, Math.ceil(totalMatching / PAGE_SIZE))
   const rangeStart = totalMatching === 0 ? 0 : page * PAGE_SIZE + 1
   const rangeEnd = Math.min(totalMatching, (page + 1) * PAGE_SIZE)
-  const hasHubermanAlready = Boolean(podcasts?.some((p) => p.rss_url === HUBERMAN_RSS))
 
   return (
     <main id="main-content" className="page-container library-page">
       <div className="page-header">
         <h1 className="page-title">Library</h1>
         <span className="library-header-note">
-          Browse feeds, select episodes, confirm estimated cost, and index locally.
+          Find podcasts, select episodes, confirm the estimated cost, and index locally.
         </span>
       </div>
 
+      <div className="library-tabs" role="tablist" aria-label="Library views">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'library'}
+          className={`library-tab ${tab === 'library' ? 'library-tab--on' : ''}`.trim()}
+          onClick={() => setTab('library')}
+        >
+          Your library
+          {podcasts && podcasts.length > 0 ? (
+            <span className="library-tab-count">{fmtNumber(podcasts.length)}</span>
+          ) : null}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'browse'}
+          className={`library-tab ${tab === 'browse' ? 'library-tab--on' : ''}`.trim()}
+          onClick={() => setTab('browse')}
+        >
+          Browse podcasts
+        </button>
+      </div>
+
+      {tab === 'browse' ? (
+        <BrowsePodcasts
+          onOpenInLibrary={(id) => {
+            setPodcastFilter(id)
+            setPage(0)
+            setTab('library')
+          }}
+          onAdded={(created) => {
+            pushToast({
+              message: `Added "${created.title}" (${fmtNumber(created.episode_count)} episodes).`,
+            })
+            setPodcastFilter(created.id)
+            setPage(0)
+            setTab('library')
+          }}
+        />
+      ) : (
+      <>
       {/* Podcast feeds module */}
       <section className="library-feeds-section" aria-labelledby="feeds-heading">
         <div className="library-feeds-bar">
@@ -340,37 +359,10 @@ export function LibraryPage() {
             Podcast feeds
           </h2>
 
-          <form className="library-add-form" onSubmit={handleAddFeed}>
-            <label htmlFor="library-rss-url" className="sr-only">
-              Podcast RSS feed URL
-            </label>
-            <input
-              id="library-rss-url"
-              ref={rssInputRef}
-              type="url"
-              className="input input-sm library-rss-input"
-              placeholder="https://feeds.megaphone.fm/..."
-              value={rssInput}
-              onChange={(e) => setRssInput(e.target.value)}
-            />
-            {!hasHubermanAlready ? (
-              <button
-                type="button"
-                className="btn btn-sm"
-                onClick={handleQuickFillHuberman}
-              >
-                Add Huberman Lab
-              </button>
-            ) : null}
-            <button
-              type="submit"
-              className="btn btn-primary btn-sm"
-              disabled={!rssInput.trim() || addPodcast.isPending}
-            >
-              {addPodcast.isPending ? <Spinner size={12} label="Syncing feed" /> : null}
-              <span>Add feed</span>
-            </button>
-          </form>
+          <button type="button" className="btn btn-sm btn-primary" onClick={() => setTab('browse')}>
+            <IconPlus size={12} />
+            <span>Find podcasts</span>
+          </button>
         </div>
 
         {feedError ? (
@@ -394,9 +386,8 @@ export function LibraryPage() {
         ) : !podcasts || podcasts.length === 0 ? (
           <div className="library-feeds-empty">
             <p>
-              No feeds added yet. Paste any podcast RSS URL above or click{' '}
-              <strong>Add Huberman Lab</strong> to prefill{' '}
-              <code>https://feeds.megaphone.fm/hubermanlab</code>.
+              No podcasts yet. Use <strong>Find podcasts</strong> to search the directory by
+              name (for example Huberman Lab) and add one in a click.
             </p>
           </div>
         ) : (
@@ -751,6 +742,8 @@ export function LibraryPage() {
           </>
         )}
       </section>
+      </>
+      )}
 
       <CostConfirmDialog
         open={costDialogOpen}

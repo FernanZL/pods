@@ -14,8 +14,9 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react'
+import { createPortal } from 'react-dom'
 import Markdown, { type Components } from 'react-markdown'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { streamChat } from '../api/chatStream'
 import { ApiError } from '../api/client'
@@ -34,6 +35,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { EmptyState } from '../components/EmptyState'
 import { ErrorBanner } from '../components/ErrorBanner'
 import {
+  IconChat,
   IconCheck,
   IconChevronDown,
   IconClose,
@@ -42,6 +44,7 @@ import {
   IconStop,
   IconTrash,
 } from '../components/Icons'
+import { useTopbarSlot } from '../components/topbarSlot'
 import { IndexStrip } from '../components/IndexStrip'
 import { LibraryBrief } from '../components/LibraryBrief'
 import { ReferenceList } from '../components/ReferenceList'
@@ -228,6 +231,8 @@ export function ChatPage() {
   const [draftScope, setDraftScope] = useState<Scope>({ podcast_ids: null, episode_ids: null })
   const [composerText, setComposerText] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
+  // The app shell renders a top-bar slot; the Conversations menu is portalled into it.
+  const topbarSlot = useTopbarSlot()
 
   // Inline rename & delete confirm state
   const [editingConvId, setEditingConvId] = useState<number | null>(null)
@@ -407,7 +412,7 @@ export function ChatPage() {
               )
               void queryClient.invalidateQueries({ queryKey: queryKeys.conversations })
               if (targetConvId === null) {
-                navigate(`/c/${data.conversation_id}`, { replace: true })
+                navigate(`/chat/${data.conversation_id}`, { replace: true })
               }
             },
             onCitations: (data) => {
@@ -482,6 +487,20 @@ export function ChatPage() {
     [navigate, queryClient],
   )
 
+  // A question handed over from the home page (/chat?q=...) is sent once on arrival.
+  // Deferred so a remount (StrictMode, fast navigation) cancels the pending send instead of
+  // aborting a stream that already started; the q param is consumed when it fires.
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    const q = searchParams.get('q')
+    if (!q || activeConvId !== null) return
+    const timer = window.setTimeout(() => {
+      setSearchParams({}, { replace: true })
+      void sendQuestion(q, null, draftScope)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [searchParams, setSearchParams, activeConvId, sendQuestion, draftScope])
+
   const handleComposerSubmit = (e?: FormEvent) => {
     e?.preventDefault()
     if (isStreamingNow) return
@@ -512,7 +531,7 @@ export function ChatPage() {
     setActiveCitation(null)
     setSelectedTurnKey(null)
     setDrawerOpen(false)
-    navigate('/')
+    navigate('/chat')
     window.setTimeout(() => {
       composerRef.current?.focus()
     }, 0)
@@ -538,7 +557,7 @@ export function ChatPage() {
         setDeletingConv(null)
         if (activeConvId === targetId) {
           setStream(null)
-          navigate('/')
+          navigate('/chat')
         }
       },
     })
@@ -566,6 +585,26 @@ export function ChatPage() {
 
   return (
     <div className="chat-layout">
+      {topbarSlot
+        ? createPortal(
+            <button
+              type="button"
+              className="chat-convs-trigger"
+              aria-expanded={drawerOpen}
+              aria-controls="chat-convs-panel"
+              onClick={() => setDrawerOpen((open) => !open)}
+            >
+              <IconChat size={15} />
+              <span className="chat-convs-trigger-label">Conversations</span>
+              {conversations && conversations.length > 0 ? (
+                <span className="chat-convs-trigger-count">
+                  {fmtNumber(conversations.length)}
+                </span>
+              ) : null}
+            </button>,
+            topbarSlot,
+          )
+        : null}
       {drawerOpen ? (
         <div
           className="chat-drawer-backdrop"
@@ -575,8 +614,10 @@ export function ChatPage() {
       ) : null}
 
       <aside
+        id="chat-convs-panel"
         className={`chat-convs ${drawerOpen ? 'chat-convs--open' : ''}`.trim()}
         aria-label="Conversations"
+        inert={!drawerOpen}
       >
         <div className="chat-convs-head">
           <h2 className="chat-panel-heading">Conversations</h2>
@@ -589,7 +630,7 @@ export function ChatPage() {
               type="button"
               className="btn btn-ghost btn-sm chat-convs-close"
               onClick={() => setDrawerOpen(false)}
-              aria-label="Close conversations drawer"
+              aria-label="Close conversations"
             >
               <IconClose size={13} />
             </button>
@@ -661,7 +702,7 @@ export function ChatPage() {
                   ) : (
                     <div className="chat-conv-row">
                       <Link
-                        to={`/c/${conv.id}`}
+                        to={`/chat/${conv.id}`}
                         className="chat-conv-link"
                         onClick={() => {
                           setDrawerOpen(false)
@@ -709,7 +750,6 @@ export function ChatPage() {
           config={config}
           scope={effectiveScope}
           onScopeChange={handleScopeChange}
-          onOpenConversations={() => setDrawerOpen(true)}
         />
 
         <div className="chat-transcript">

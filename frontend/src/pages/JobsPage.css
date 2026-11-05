@@ -285,3 +285,10 @@
     border-top: var(--hairline);
   }
 }
+
+.jobs-head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}

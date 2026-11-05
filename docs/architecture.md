@@ -89,6 +89,11 @@ Backends (`providers/transcription/`):
 | DELETE `/episodes/{id}/data` | | 204. Deletes local files and vectors, resets state | ingest |
 | GET `/jobs` | `status?` (comma list), `limit=100` | `JobOut[]`, newest first | ingest |
 | GET `/jobs/{id}` | | `JobOut` | ingest |
+| DELETE `/jobs/{id}` | | 204; 409 if queued/running (history only) | ingest |
+| DELETE `/jobs` | `?status=done,failed,cancelled` | `{"deleted": n}` (finished jobs only) | ingest |
+| GET `/discover/search` | `q, limit=20` | `DiscoverPodcast[]` via the Apple Podcasts directory (no key); 502 if unreachable | discover |
+| GET `/discover/top` | `genre_id?, limit=24` | `DiscoverPodcast[]` top chart resolved to feed URLs (cached 1 h) | discover |
+| GET `/discover/genres` | | `DiscoverGenre[]` | discover |
 | POST `/jobs/{id}/cancel` | | `JobOut` | ingest |
 | POST `/jobs/{id}/retry` | | `JobOut` (new job, same steps) | ingest |
 | GET `/index/stats` | | `IndexStats` | rag |
@@ -115,10 +120,12 @@ Each event has an `event:` name and JSON `data:`.
 The frontend reads the stream with `fetch` + `ReadableStream`, because EventSource cannot POST.
 
 ## Frontend routes
-- `/`: Chat (home). Conversation sidebar, scope picker, index-stats strip, streamed answer with citation chips. A chip goes to `/episodes/:id?t=<seconds>`.
-- `/library`: feeds, episode browser (search, status filter, select page / select all matching), Process with a cost-confirm dialog.
-- `/episodes/:id`: player plus diarized transcript. `?t=` seeks and scrolls to it. Also summary, re-index and delete actions.
-- `/jobs`: live queue, polled every 2 s while any job is active.
+All pages share one indigo top bar (Recall wordmark, Chat / Library / Jobs, and a page slot on the right).
+- `/`: Home. Indigo hero with "Ask your podcasts." and an ask box (submits to `/chat?q=`), over drifting speaker tapes drawn from the most recently indexed episodes. Below: continue a conversation, recently indexed, grow the library.
+- `/chat`, `/chat/:conversationId`: Chat. The Conversations menu sits in the top-bar slot; answers have the References column beside them. `?q=` sends a question on arrival. Old `/c/:id` links redirect.
+- `/library`: "Your library" tab (feeds and the episode table, process with cost confirm) and a "Browse podcasts" tab (`?tab=browse`): name search and genre top charts from the Apple directory, one-click Add, RSS URL fallback.
+- `/episodes/:id`: player, diarized transcript, cited-passage margin. `?t=` seeks and scrolls.
+- `/jobs`: live queue, Cancel / Retry / Delete per job, "Clear finished".
 
 ## Fake / demo mode
 Set `LLM_PROVIDER=fake TRANSCRIBER=fake EMBEDDINGS_PROVIDER=fake DOWNLOAD_MODE=fake`.

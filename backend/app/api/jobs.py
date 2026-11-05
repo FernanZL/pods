@@ -85,3 +85,38 @@ def retry_job(job_id: int, session: SessionDep) -> JobOut:
     assert new_job.id is not None
     worker.enqueue(new_job.id)
     return job_to_out(session, new_job)
+
+
+_FINISHED_STATUSES = ("done", "failed", "cancelled")
+
+
+@router.delete("/jobs", response_model=dict[str, int])
+def clear_finished_jobs(
+    session: SessionDep,
+    status: Annotated[str, Query(description="comma list of finished statuses")] = (
+        "done,failed,cancelled"
+    ),
+) -> dict[str, int]:
+    """Delete finished job records (history only; episodes and their data are untouched)."""
+    statuses = [s.strip() for s in status.split(",") if s.strip() in _FINISHED_STATUSES]
+    if not statuses:
+        raise HTTPException(
+            status_code=422, detail="Only done, failed or cancelled jobs can be cleared"
+        )
+    jobs = session.exec(select(Job).where(col(Job.status).in_(statuses))).all()
+    for job in jobs:
+        session.delete(job)
+    session.commit()
+    return {"deleted": len(jobs)}
+
+
+@router.delete("/jobs/{job_id}", status_code=204)
+def delete_job(job_id: int, session: SessionDep) -> None:
+    """Delete one finished job record. Active jobs must be cancelled first."""
+    job = session.get(Job, job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status in _ACTIVE_STATUSES:
+        raise HTTPException(status_code=409, detail="Cancel the job before deleting it")
+    session.delete(job)
+    session.commit()

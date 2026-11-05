@@ -219,3 +219,24 @@ class EpisodeCitationRef(BaseModel):
     end: float
     speaker: str
     created_at: datetime
+
+
+# --- Discover (Apple Podcasts directory) -----------------------------------
+
+
+class DiscoverPodcast(BaseModel):
+    """A podcast found in the Apple Podcasts directory (not yet necessarily added)."""
+
+    itunes_id: int
+    title: str
+    author: str
+    feed_url: str | None  # None when Apple does not expose a public RSS feed
+    artwork_url: str | None
+    genre: str | None
+    episode_count: int | None
+    podcast_id: int | None  # set when this feed is already in the library
+
+
+class DiscoverGenre(BaseModel):
+    id: int
+    name: str

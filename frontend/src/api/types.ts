@@ -190,3 +190,20 @@ export interface EpisodeCitationRef {
   speaker: string
   created_at: ISODate
 }
+
+// --- Discover (Apple Podcasts directory) ---------------------------------
+export interface DiscoverPodcast {
+  itunes_id: number
+  title: string
+  author: string
+  feed_url: string | null
+  artwork_url: string | null
+  genre: string | null
+  episode_count: number | null
+  podcast_id: number | null // already in the library
+}
+
+export interface DiscoverGenre {
+  id: number
+  name: string
+}

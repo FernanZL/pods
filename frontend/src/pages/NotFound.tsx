@@ -10,7 +10,7 @@ export function NotFound() {
         description="The address you requested does not match a view in Recall."
         action={
           <>
-            <Link to="/" className="btn btn-primary">
+            <Link to="/chat" className="btn btn-primary">
               Back to Chat
             </Link>
             <Link to="/library" className="btn">

@@ -1,8 +1,8 @@
 .chat-layout {
   display: grid;
-  grid-template-columns: var(--convs-w) minmax(0, 1fr) var(--refs-w);
+  grid-template-columns: minmax(0, 1fr) var(--refs-w);
   flex: 1;
-  min-height: 100svh;
+  min-height: calc(100svh - var(--topbar-h));
   min-width: 0;
 }
 
@@ -14,19 +14,66 @@
   color: var(--ink-muted);
 }
 
-/* Left column: Conversations */
+/* Conversations: a panel that drops from the top-bar "Conversations" menu */
 .chat-convs {
-  background: var(--surface-sunk);
-  border-right: var(--hairline);
-  padding: var(--s-5) var(--s-4);
+  position: fixed;
+  top: calc(var(--topbar-h) + var(--s-2));
+  right: var(--s-4);
+  z-index: 90;
+  width: min(360px, calc(100vw - 2 * var(--s-4)));
+  max-height: min(72svh, 640px);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  padding: var(--s-4);
   display: flex;
   flex-direction: column;
   gap: var(--s-3);
-  height: 100svh;
-  position: sticky;
-  top: 0;
   overflow-y: auto;
   min-width: 0;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    visibility 0s linear var(--dur-fast);
+}
+
+.chat-convs--open {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+/* Top-bar trigger (portalled into the app shell) */
+.chat-convs-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 var(--s-3);
+  border: 1px solid var(--shell-line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--shell-ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.chat-convs-trigger:hover,
+.chat-convs-trigger[aria-expanded='true'] {
+  background: var(--shell-line);
+}
+
+.chat-convs-trigger-count {
+  color: var(--shell-ink-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .chat-convs-head {
@@ -43,7 +90,7 @@
 }
 
 .chat-convs-close {
-  display: none;
+  display: inline-flex;
 }
 
 .chat-convs-skeletons {
@@ -172,7 +219,7 @@
   flex-direction: column;
   padding: 0 var(--s-10);
   min-width: 0;
-  min-height: 100svh;
+  min-height: calc(100svh - var(--topbar-h));
 }
 
 .chat-transcript {
@@ -400,9 +447,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--s-3);
-  height: 100svh;
+  height: calc(100svh - var(--topbar-h));
   position: sticky;
-  top: 0;
+  top: var(--topbar-h);
   overflow-y: auto;
   min-width: 0;
 }
@@ -439,7 +486,10 @@
 }
 
 .chat-drawer-backdrop {
-  display: none;
+  position: fixed;
+  inset: var(--topbar-h) 0 0 0;
+  z-index: 85;
+  background: color-mix(in srgb, var(--ink) 18%, transparent);
 }
 
 /* Tablet (768–1199): collapse References beneath answer, Conversations into drawer */
@@ -456,34 +506,6 @@
     display: block;
   }
 
-  .chat-convs {
-    position: fixed;
-    top: 0;
-    left: var(--rail-w);
-    bottom: 0;
-    width: min(300px, calc(100vw - var(--rail-w)));
-    height: 100svh;
-    z-index: 90;
-    transform: translateX(-110%);
-    transition: transform var(--dur) var(--ease-out);
-  }
-
-  .chat-convs--open {
-    transform: translateX(0);
-  }
-
-  .chat-convs-close {
-    display: inline-flex;
-  }
-
-  .chat-drawer-backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 85;
-    background: color-mix(in srgb, var(--ink) 40%, transparent);
-  }
-
   .chat-main {
     padding: 0 var(--s-6);
   }
@@ -491,18 +513,12 @@
 
 /* Mobile (< 768): single column, rail is top bar */
 @media (max-width: 767px) {
-  .chat-layout {
-    min-height: calc(100svh - 52px);
-  }
-
   .chat-main {
-    min-height: calc(100svh - 52px);
     padding: 0 var(--s-4);
   }
 
-  .chat-convs {
-    left: 0;
-    width: min(300px, 88vw);
+  .chat-convs-trigger-label {
+    display: none;
   }
 
   .chat-transcript {

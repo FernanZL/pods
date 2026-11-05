@@ -4,6 +4,8 @@ import { ApiError } from '../api/client'
 import {
   isJobActive,
   useCancelJob,
+  useClearFinishedJobs,
+  useDeleteJob,
   useConfig,
   useEpisodes,
   useJobs,
@@ -13,7 +15,8 @@ import {
 import type { Job, JobKind, JobStatus } from '../api/types'
 import { EmptyState } from '../components/EmptyState'
 import { ErrorBanner } from '../components/ErrorBanner'
-import { IconClose, IconRefresh } from '../components/Icons'
+import { ConfirmDialog } from '../components/ConfirmDialog'
+import { IconClose, IconRefresh, IconTrash } from '../components/Icons'
 import { Skeleton, Spinner } from '../components/Spinner'
 import { StatusStamp } from '../components/StatusStamp'
 import { useToast } from '../components/ToastContext'
@@ -60,6 +63,9 @@ export function JobsPage() {
 
   const cancelJob = useCancelJob()
   const retryJob = useRetryJob()
+  const deleteJob = useDeleteJob()
+  const clearFinished = useClearFinishedJobs()
+  const [confirmClear, setConfirmClear] = useState(false)
   const rebuildIndex = useRebuildIndex()
 
   const [viewFilter, setViewFilter] = useState<JobViewFilter>('all')
@@ -119,6 +125,35 @@ export function JobsPage() {
     })
   }
 
+  const handleDelete = (jobId: number) => {
+    setActionError(null)
+    setBusyJobId(jobId)
+    deleteJob.mutate(jobId, {
+      onSettled: () => setBusyJobId(null),
+      onError: (err) => {
+        setActionError(err instanceof ApiError ? err.detail : 'Could not delete job.')
+      },
+    })
+  }
+
+  const finishedCount = (jobs ?? []).filter(
+    (j) => j.status === 'done' || j.status === 'failed' || j.status === 'cancelled',
+  ).length
+
+  const handleClearFinished = () => {
+    setActionError(null)
+    clearFinished.mutate(undefined, {
+      onSuccess: ({ deleted }) => {
+        setConfirmClear(false)
+        pushToast({ message: `Cleared ${fmtNumber(deleted)} finished ${deleted === 1 ? 'job' : 'jobs'}.` })
+      },
+      onError: (err) => {
+        setConfirmClear(false)
+        setActionError(err instanceof ApiError ? err.detail : 'Could not clear finished jobs.')
+      },
+    })
+  }
+
   const handleRebuildIndex = () => {
     setActionError(null)
     rebuildIndex.mutate(undefined, {
@@ -148,6 +183,17 @@ export function JobsPage() {
           )}
         </div>
 
+        <div className="jobs-head-actions">
+        <button
+          type="button"
+          className="btn btn-sm"
+          disabled={finishedCount === 0 || clearFinished.isPending}
+          onClick={() => setConfirmClear(true)}
+          title={finishedCount === 0 ? 'No finished jobs to clear' : undefined}
+        >
+          <IconTrash size={13} />
+          <span>Clear finished{finishedCount > 0 ? ` (${fmtNumber(finishedCount)})` : ''}</span>
+        </button>
         <button
           type="button"
           className="btn btn-sm"
@@ -163,7 +209,19 @@ export function JobsPage() {
           {rebuildIndex.isPending ? <Spinner size={12} label="Queueing" /> : <IconRefresh size={13} />}
           <span>Rebuild index</span>
         </button>
+        </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmClear}
+        title="Clear finished jobs?"
+        description={`Removes ${fmtNumber(finishedCount)} done, failed and cancelled job ${finishedCount === 1 ? 'record' : 'records'} from this list. Episodes, transcripts and the index are not touched.`}
+        confirmLabel="Clear finished"
+        danger
+        busy={clearFinished.isPending}
+        onConfirm={handleClearFinished}
+        onClose={() => setConfirmClear(false)}
+      />
 
       {confirmRebuild ? (
         <div className="jobs-rebuild-confirm" role="region" aria-label="Confirm index rebuild">
@@ -410,6 +468,17 @@ export function JobsPage() {
                         >
                           {isRowBusy ? <Spinner size={12} label="Retrying" /> : <IconRefresh size={12} />}
                           <span>Retry</span>
+                        </button>
+                      ) : null}
+                      {!isJobActive(job) ? (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-ghost"
+                          disabled={isRowBusy}
+                          onClick={() => handleDelete(job.id)}
+                          aria-label={`Delete job ${job.id} from history`}
+                        >
+                          <IconTrash size={12} />
                         </button>
                       ) : null}
                     </td>

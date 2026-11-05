@@ -836,7 +836,7 @@ export function EpisodePage() {
               <ul className="episode-cited-list">
                 {citedByConversation.map(([convId, group]) => (
                   <li key={convId} className="episode-cited-group">
-                    <Link to={`/c/${convId}`} className="episode-cited-conv">
+                    <Link to={`/chat/${convId}`} className="episode-cited-conv">
                       {group.title}
                     </Link>
                     <span className="episode-cited-times">

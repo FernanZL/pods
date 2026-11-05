@@ -327,7 +327,10 @@ A duration-exact horizontal bar on a sunk track: each speaker turn is a block in
 Dense ledger: paper module with hairline border and 6px radius; sunk header row with 0.75rem semibold muted labels; 0.8125rem tabular cells with 8px by 12px padding and hairline rows; row hover shows the ground tone.
 
 ### Navigation
-Indigo rail with a 36px serif monogram square at top and vertically stacked links (58px wide, icon over 0.75rem semibold label). Rest: muted shell lavender. Hover and active: Shell Seam fill with shell ink. Below 768px the rail becomes a 52px top bar with icon-and-label links in a row.
+Indigo top bar (52px) across every page: 28px serif monogram plus "Recall" wordmark (links home), then Chat / Library / Jobs as icon-and-label links in muted shell lavender; the active section turns shell ink with a 2px underline rule flush with the bar's bottom edge. A right-hand slot holds page actions (Chat's "Conversations" menu, which drops a 360px panel below the bar). No side rails. Below 768px the wordmark hides; below 420px link icons hide.
+
+### Home Hero (signature)
+The indigo shell continues from the top bar into a full-width hero: serif "Ask your podcasts." at clamp(2.75rem, 6.2vw, 5.25rem), a one-line library summary in shell lavender, and a 58px paper ask field with an indigo Ask button. Behind it, speaker tapes: one row per recently indexed episode, each turn a rounded block at its exact duration in the tape colours (--tape-s0..3), drifting horizontally at different slow speeds and masked to fade behind the text. Rows are generated stand-ins until the library has episodes; reduced motion holds them still.
 
 ### Icons
 Authored inline SVGs from a single module (`components/Icons.tsx`), 12 to 18px, stroke in currentColor.

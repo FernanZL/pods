@@ -8,6 +8,11 @@ import {
 } from '@tanstack/react-query'
 import {
   cancelJob,
+  clearFinishedJobs,
+  deleteJob,
+  getDiscoverGenres,
+  getTopPodcasts,
+  searchDirectory,
   createPodcast,
   deleteConversation,
   deleteEpisodeData,
@@ -43,6 +48,10 @@ export const queryKeys = {
   episode: (id: number) => ['episode', id] as const,
   episodeAll: ['episode'] as const,
   episodeCitations: (id: number) => ['episodeCitations', id] as const,
+  discoverGenres: ['discoverGenres'] as const,
+  discoverSearch: (q: string) => ['discoverSearch', q] as const,
+  discoverTop: (genreId: number | null) => ['discoverTop', genreId] as const,
+  discoverAll: ['discoverSearch'] as const,
   jobs: (filter?: JobsFilter) => ['jobs', filter ?? {}] as const,
   jobsAll: ['jobs'] as const,
   conversations: ['conversations'] as const,
@@ -194,6 +203,8 @@ export function useAddPodcast() {
       void qc.invalidateQueries({ queryKey: queryKeys.podcasts })
       void qc.invalidateQueries({ queryKey: queryKeys.episodesAll })
       void qc.invalidateQueries({ queryKey: queryKeys.indexStats })
+      void qc.invalidateQueries({ queryKey: ['discoverSearch'] })
+      void qc.invalidateQueries({ queryKey: ['discoverTop'] })
     },
   })
 }
@@ -302,6 +313,51 @@ export function useCancelJob() {
       void qc.invalidateQueries({ queryKey: queryKeys.episodesAll })
       void qc.invalidateQueries({ queryKey: queryKeys.episodeAll })
     },
+  })
+}
+
+export function useDeleteJob() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => deleteJob(id),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.jobsAll }),
+  })
+}
+
+export function useClearFinishedJobs() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => clearFinishedJobs(),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.jobsAll }),
+  })
+}
+
+export function useDiscoverGenres() {
+  return useQuery({
+    queryKey: queryKeys.discoverGenres,
+    queryFn: getDiscoverGenres,
+    staleTime: Infinity,
+  })
+}
+
+/** Directory search by name; disabled until there is a query. */
+export function useDirectorySearch(q: string) {
+  const term = q.trim()
+  return useQuery({
+    queryKey: queryKeys.discoverSearch(term),
+    queryFn: () => searchDirectory(term),
+    enabled: term.length >= 2,
+    staleTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useTopPodcasts(genreId: number | null, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.discoverTop(genreId),
+    queryFn: () => getTopPodcasts(genreId),
+    enabled,
+    staleTime: 30 * 60_000,
   })
 }
 
