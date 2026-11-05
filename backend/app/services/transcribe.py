@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import shutil
+import time
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from concurrent.futures import TimeoutError as FuturesTimeout
 from pathlib import Path
 
 from app import db, storage
@@ -23,7 +27,10 @@ from app.providers.transcription.fake import FakeTranscriber
 from app.services import audio
 from app.services.downloader import download_episode
 
+log = logging.getLogger(__name__)
+
 MERGE_MAX_GAP_SECONDS = 1.5
+_HEARTBEAT_SECONDS = 5.0
 SPEAKER_NAMING_SEGMENTS = 40
 _UNKNOWN_MARKERS = frozenset({"", "unknown", "none", "null", "n/a", "?"})
 
@@ -225,43 +232,81 @@ def transcribe_episode(
 
         all_segments: list[Segment] = []
         if chunks:
-            first_chunk = chunks[0]
-            on_progress(0.15, f"Transcribing chunk 1/{len(chunks)}")
-            first_segs = transcriber.transcribe_chunk(
-                first_chunk.path,
-                known_speakers=[],
-                context=context,
-            )
-            if transcriber.supports_diarization:
-                # Stable labels that can't collide with the API's per-request "A"/"B"
-                # labels for voices first heard in a later chunk.
-                stable = {
-                    label: f"S{i}"
-                    for i, label in enumerate(dict.fromkeys(s.speaker for s in first_segs), 1)
-                }
-                for seg in first_segs:
-                    seg.speaker = stable.get(seg.speaker, seg.speaker)
-            all_segments.extend(_with_offset(seg, first_chunk.offset) for seg in first_segs)
+            total = len(chunks)
+            started = time.monotonic()
+            pool = ThreadPoolExecutor(max_workers=max(1, settings.transcribe_parallelism))
 
-            known_speakers: list[KnownSpeaker] = []
-            if len(chunks) > 1 and transcriber.supports_diarization:
-                on_progress(0.25, "Extracting speaker reference clips")
-                known_speakers = _build_known_speakers(
-                    first_chunk.path,
-                    first_segs,
-                    workdir,
-                    settings.max_known_speakers,
-                )
+            def _elapsed() -> str:
+                return storage.fmt_ts(time.monotonic() - started)
 
-            for idx, chunk in enumerate(chunks[1:], start=2):
-                frac = 0.25 + 0.60 * ((idx - 1) / len(chunks))
-                on_progress(frac, f"Transcribing chunk {idx}/{len(chunks)}")
+            def _run(chunk: audio.AudioChunk, known: list[KnownSpeaker]) -> list[Segment]:
+                t0 = time.monotonic()
                 segs = transcriber.transcribe_chunk(
-                    chunk.path,
-                    known_speakers=known_speakers,
-                    context=context,
+                    chunk.path, known_speakers=known, context=context
                 )
-                all_segments.extend(_with_offset(seg, chunk.offset) for seg in segs)
+                log.info(
+                    "episode %s: %s transcribed in %.0fs (%d segments)",
+                    episode_id,
+                    chunk.path.name,
+                    time.monotonic() - t0,
+                    len(segs),
+                )
+                return segs
+
+            try:
+                # Chunk 1 runs alone: its speakers become the reference voices for the rest.
+                first_chunk = chunks[0]
+                first_future = pool.submit(_run, first_chunk, [])
+                while True:
+                    try:
+                        first_segs = first_future.result(timeout=_HEARTBEAT_SECONDS)
+                        break
+                    except FuturesTimeout:
+                        on_progress(
+                            0.15,
+                            f"Chunk 1/{total}: identifying speakers · {_elapsed()} elapsed",
+                        )
+                if transcriber.supports_diarization:
+                    # Stable labels that can't collide with the API's per-request "A"/"B"
+                    # labels for voices first heard in a later chunk.
+                    stable = {
+                        label: f"S{i}"
+                        for i, label in enumerate(dict.fromkeys(s.speaker for s in first_segs), 1)
+                    }
+                    for seg in first_segs:
+                        seg.speaker = stable.get(seg.speaker, seg.speaker)
+                all_segments.extend(_with_offset(seg, first_chunk.offset) for seg in first_segs)
+
+                known_speakers: list[KnownSpeaker] = []
+                if total > 1 and transcriber.supports_diarization:
+                    on_progress(0.25, "Extracting speaker reference clips")
+                    known_speakers = _build_known_speakers(
+                        first_chunk.path,
+                        first_segs,
+                        workdir,
+                        settings.max_known_speakers,
+                    )
+
+                # Remaining chunks run in parallel; results are reassembled in order.
+                pending = {pool.submit(_run, c, known_speakers): c for c in chunks[1:]}
+                done_count = 1
+                while pending:
+                    finished, _ = wait(
+                        pending, timeout=_HEARTBEAT_SECONDS, return_when=FIRST_COMPLETED
+                    )
+                    for fut in finished:
+                        chunk = pending.pop(fut)
+                        all_segments.extend(_with_offset(s, chunk.offset) for s in fut.result())
+                        done_count += 1
+                    on_progress(
+                        0.25 + 0.60 * (done_count / total),
+                        f"Transcribed {done_count}/{total} chunks · {_elapsed()} elapsed",
+                    )
+            finally:
+                # On cancel or error, drop chunks that have not started yet.
+                pool.shutdown(wait=False, cancel_futures=True)
+
+            all_segments.sort(key=lambda s: s.start)
 
         merged = merge_segments(all_segments)
         on_progress(0.9, "Naming speakers")

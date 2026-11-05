@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     audio_chunk_seconds: int = 600
     audio_bitrate_kbps: int = 32
     max_known_speakers: int = 4
+    # Chunks after the first are transcribed concurrently (per episode).
+    transcribe_parallelism: int = 6
+    # Per-request timeout for transcription calls; the SDK's own silent retries are off
+    # so a slow request is never re-sent (and re-billed) without it being logged.
+    transcribe_timeout_seconds: float = 900.0
 
     # --- Embeddings / retrieval -----------------------------------------
     embeddings_provider: EmbeddingsProvider = "openai"

@@ -22,10 +22,15 @@ class OpenAIDiarizeTranscriber:
         api_key: str = "",
         model: str = "gpt-4o-transcribe-diarize",
         client: Any | None = None,
+        timeout: float = 900.0,
     ) -> None:
         self.name = model
         self.supports_diarization = True
-        self._client = client if client is not None else OpenAI(api_key=api_key)
+        self._client = (
+            client
+            if client is not None
+            else OpenAI(api_key=api_key, timeout=timeout, max_retries=0)
+        )
 
     def transcribe_chunk(
         self,

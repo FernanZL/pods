@@ -1,5 +1,6 @@
 """FastAPI entrypoint: `uv run uvicorn app.main:app --reload`."""
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -10,6 +11,8 @@ from app.api import chat, conversations, episodes, index, jobs, meta, podcasts
 from app.config import get_settings
 from app.db import init_db
 from app.providers import ProviderNotConfigured
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s: %(message)s")
 
 
 @asynccontextmanager

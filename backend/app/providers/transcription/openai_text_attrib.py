@@ -27,11 +27,16 @@ class OpenAITextTranscriber:
         model: str = "gpt-transcribe",
         llm: LLMClient | None = None,
         client: Any | None = None,
+        timeout: float = 900.0,
     ) -> None:
         self.name = model
         self.supports_diarization = False
         self._llm = llm
-        self._client = client if client is not None else OpenAI(api_key=api_key)
+        self._client = (
+            client
+            if client is not None
+            else OpenAI(api_key=api_key, timeout=timeout, max_retries=0)
+        )
 
     def _chunk_duration(self, audio_path: Path, text: str) -> float:
         with suppress(OSError, RuntimeError, ValueError):

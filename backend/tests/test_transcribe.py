@@ -282,3 +282,72 @@ def test_diarize_retry_and_text_attribution(
     assert attributed[1].speaker == "B"
     assert attributed[0].start == 0.0
     assert attributed[1].end >= attributed[0].end > 0.0
+
+
+def test_later_chunks_run_in_parallel_and_reassemble_in_order(
+    session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Chunks after the first are sent concurrently; out-of-order completions are re-sorted."""
+    import threading
+    import time as _time
+
+    ep = _seed_episode(session)
+    assert ep.id is not None
+
+    lock = threading.Lock()
+    in_flight = 0
+    max_in_flight = 0
+    calls: list[dict[str, Any]] = []
+
+    class _SlowTranscriptions:
+        def create(self, **kwargs: Any) -> Any:
+            nonlocal in_flight, max_in_flight
+            name = Path(kwargs["file"].name).name
+            idx = int(name.split("_")[1].split(".")[0])
+            with lock:
+                calls.append(kwargs)
+                in_flight += 1
+                max_in_flight = max(max_in_flight, in_flight)
+            # later chunks finish first, to force out-of-order completion
+            _time.sleep(0.05 * (5 - idx) if idx else 0.01)
+            with lock:
+                in_flight -= 1
+            speaker = "A" if idx == 0 else "S1"
+            return SimpleNamespace(
+                segments=[{"speaker": speaker, "start": 1.0, "end": 2.0, "text": f"chunk {idx}"}]
+            )
+
+    diarizer = OpenAIDiarizeTranscriber(
+        client=SimpleNamespace(audio=SimpleNamespace(transcriptions=_SlowTranscriptions()))
+    )
+
+    def _chunks(_src: Path, workdir: Path, *_a: Any) -> list[audio.AudioChunk]:
+        workdir.mkdir(parents=True, exist_ok=True)
+        out = []
+        for i in range(5):
+            p = workdir / f"chunk_{i:04d}.mp3"
+            p.write_bytes(b"x")
+            out.append(audio.AudioChunk(path=p, offset=600.0 * i, duration=600.0))
+        return out
+
+    def _clip(_src: Path, _s: float, _e: float, dst: Path) -> Path:
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes(b"ref")
+        return dst
+
+    monkeypatch.setattr(audio, "prepare_chunks", _chunks)
+    monkeypatch.setattr(audio, "cut_clip", _clip)
+    monkeypatch.setattr(transcribe, "get_transcriber", lambda: diarizer)
+    monkeypatch.setattr(transcribe, "get_llm", lambda: _StubLLM({"S1": "Host"}))
+
+    result = transcribe_episode(ep.id)
+
+    assert len(calls) == 5
+    assert max_in_flight > 1  # chunks 2..5 overlapped
+    assert all(c.get("known_speaker_names") == ["S1"] for c in calls[1:])
+    # reassembled in time order with chunk offsets applied, despite reversed completion
+    assert [seg.text for seg in result.segments] == [f"chunk {i}" for i in range(5)]
+    assert [seg.start for seg in result.segments] == pytest.approx(
+        [1.0 + 600.0 * i for i in range(5)]
+    )

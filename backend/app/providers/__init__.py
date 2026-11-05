@@ -73,11 +73,16 @@ def get_transcriber() -> Transcriber:
         from app.providers.transcription.openai_text_attrib import OpenAITextTranscriber
 
         return OpenAITextTranscriber(
-            api_key=s.openai_api_key, model=s.text_transcribe_model, llm=get_llm()
+            api_key=s.openai_api_key,
+            model=s.text_transcribe_model,
+            llm=get_llm(),
+            timeout=s.transcribe_timeout_seconds,
         )
     from app.providers.transcription.openai_diarize import OpenAIDiarizeTranscriber
 
-    return OpenAIDiarizeTranscriber(api_key=s.openai_api_key, model=s.diarize_model)
+    return OpenAIDiarizeTranscriber(
+        api_key=s.openai_api_key, model=s.diarize_model, timeout=s.transcribe_timeout_seconds
+    )
 
 
 def reset_providers() -> None:
