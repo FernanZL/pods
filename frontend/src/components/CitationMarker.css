@@ -1,0 +1,27 @@
+.citation-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: super;
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  padding: 1px 5px;
+  margin: 0 1px 0 2px;
+  border-radius: 3px;
+  border: none;
+  background: var(--cite-bg);
+  color: var(--cite-ink);
+  cursor: pointer;
+  transition:
+    background-color var(--dur) var(--ease-out),
+    color var(--dur) var(--ease-out);
+}
+
+.citation-marker:hover,
+.citation-marker--live {
+  background: var(--cite-live);
+  color: var(--cite-live-ink);
+}

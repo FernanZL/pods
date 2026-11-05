@@ -1,0 +1,84 @@
+.status-stamp {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 7px;
+  border-radius: var(--radius-sm);
+  border: 1px solid currentColor;
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.status-stamp--new {
+  color: var(--state-new);
+}
+
+.status-stamp--progress {
+  color: var(--state-progress);
+}
+
+.status-stamp--done {
+  color: var(--state-done);
+}
+
+.status-stamp--failed {
+  color: var(--state-failed);
+}
+
+.status-stamp--cancelled {
+  color: var(--state-cancelled);
+}
+
+.status-stamp--warn {
+  color: var(--state-warn);
+}
+
+/* Pipeline tally: three ticks, filled per completed step */
+.status-stamp-steps {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.status-stamp-step {
+  width: 3px;
+  height: 9px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: 0.22;
+}
+
+.status-stamp-step.is-on {
+  opacity: 1;
+}
+
+/* Running jobs: the stamp fills with progress */
+.status-stamp-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: currentColor;
+  opacity: 0.12;
+  transition: width var(--dur) var(--ease-out);
+}
+
+.status-stamp-text {
+  position: relative;
+}
+
+/* Finished work is double-ruled, like a validation stamp */
+.status-stamp--is-done,
+.status-stamp--is-indexed {
+  box-shadow: inset 0 0 0 1px var(--surface), inset 0 0 0 2px currentColor;
+  padding: 2px 8px;
+}
+
+/* Cancelled work never disappears; it is struck through */
+.status-stamp--is-cancelled .status-stamp-text {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}

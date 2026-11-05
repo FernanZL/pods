@@ -1,0 +1,33 @@
+.spinner-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+@keyframes recall-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner-svg {
+  animation: recall-spin 700ms linear infinite;
+}
+
+@keyframes recall-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.skeleton-bar {
+  display: block;
+  background: var(--surface-sunk);
+  border-radius: var(--radius-sm);
+  animation: recall-pulse 1.5s var(--ease-out) infinite;
+}

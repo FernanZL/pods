@@ -1,0 +1,150 @@
+/* Design tokens — Reference Apparatus (indigo shell, magenta citations).
+   CONTRACT FILE: components consume these variables; do not hard-code colours. */
+@import '@fontsource-variable/source-sans-3';
+@import '@fontsource-variable/source-serif-4';
+
+:root {
+  color-scheme: light dark;
+
+  /* type */
+  --font-ui: 'Source Sans 3 Variable', 'Source Sans 3', system-ui, sans-serif;
+  --font-prose: 'Source Serif 4 Variable', 'Source Serif 4', Georgia, serif;
+  --text-xs: 0.75rem;   /* 12 — meta, column headings */
+  --text-sm: 0.8125rem; /* 13 — table cells, references */
+  --text-md: 0.9375rem; /* 15 — UI body */
+  --text-lg: 1.1875rem; /* 19 — answer prose */
+  --text-xl: 1.5rem;    /* 24 — question line, page titles */
+  --text-2xl: 2rem;     /* 32 — episode title */
+  --leading-ui: 1.4;
+  --leading-prose: 1.62;
+  --weight-regular: 400;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --measure: 68ch;
+
+  /* space (4px base) */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px;
+  --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px;
+
+  /* shape */
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --hairline: 1px solid var(--line);
+
+  /* layout */
+  --rail-w: 72px;
+  --convs-w: 280px;
+  --refs-w: 380px;
+
+  /* motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 120ms;
+  --dur: 220ms;
+
+  /* ---- light palette ---- */
+  --shell: #261a57;          /* rail */
+  --shell-ink: #f1edff;      /* rail text, active */
+  --shell-ink-muted: #b3a9dc;
+  --shell-line: #3a2d74;
+  --ground: #f8f7fc;         /* page */
+  --surface: #ffffff;        /* panels, inputs, references column */
+  --surface-sunk: #efedf6;   /* conversation list, table header */
+  --ink: #17142a;
+  --ink-muted: #57527a;      /* secondary text (≥ 4.5:1 on ground) */
+  --ink-faint: #6e6890;      /* placeholders, meta (≥ 4.5:1 on surface) */
+  --line: #dcd8ea;
+  --line-strong: #c3bddb;
+  --accent: #3a2a85;         /* primary buttons, links */
+  --accent-ink: #ffffff;
+  --accent-hover: #2d1f6e;
+
+  /* citations — the signature */
+  --cite-bg: #f6ddec;        /* resting marker chip */
+  --cite-ink: #6b1d4c;
+  --cite-live: #b8287a;      /* focused/live citation (5.8:1 with white) */
+  --cite-live-ink: #ffffff;
+  --cite-live-tint: #fbeaf4; /* lifted reference background */
+  --dimmed-opacity: 0.45;
+
+  /* speakers (data series, in order of first appearance) */
+  --speaker-1: #3d6be0;
+  --speaker-2: #b4389a;
+  --speaker-3: #7a4fd0;
+  --speaker-4: #1f8fb0;
+  --speaker-other: #8a84a8;
+
+  /* states (stamps) */
+  /* states stay inside the indigo / blue / violet / magenta family; red only for failure */
+  --state-new: #57527a;
+  --state-progress: #3d6be0;
+  --state-done: #5b3fc4;
+  --state-failed: #c0263d;
+  --state-cancelled: #6e6890;
+  --state-warn: #2f3f9e;      /* indigo-blue: magenta stays reserved for the live citation */
+
+  --focus-ring: 0 0 0 2px var(--ground), 0 0 0 4px var(--cite-live);
+  --selection: #e3defa;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --shell: #1a1338;
+    --shell-ink: #f1edff;
+    --shell-ink-muted: #9d93c9;
+    --shell-line: #2c2257;
+    --ground: #13111c;
+    --surface: #1c1929;
+    --surface-sunk: #171424;
+    --ink: #ece9f7;
+    --ink-muted: #b2abd0;
+    --ink-faint: #9a93bb;
+    --line: #2e2a44;
+    --line-strong: #423c60;
+    --accent: #a993ff;
+    --accent-ink: #160f33;
+    --accent-hover: #c0afff;
+
+    --cite-bg: #4a1f3c;
+    --cite-ink: #ffd3ec;
+    --cite-live: #f06bb2;
+    --cite-live-ink: #1a0b14;
+    --cite-live-tint: #2d1a2a;
+
+    --speaker-1: #7fa2ff;
+    --speaker-2: #e57cc4;
+    --speaker-3: #a98bf0;
+    --speaker-4: #5cc3e0;
+    --speaker-other: #8f88b0;
+
+    --state-new: #9a93bb;
+    --state-progress: #7fa2ff;
+    --state-done: #b6a2ff;
+    --state-failed: #ff7a8c;
+    --state-cancelled: #8f88b0;
+    --state-warn: #9fb0ff;
+
+    --selection: #3a2d74;
+  }
+}
+
+/* base */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  line-height: var(--leading-ui);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  caret-color: var(--accent);
+}
+::selection { background: var(--selection); color: var(--ink); }
+:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
+a { color: var(--accent); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}

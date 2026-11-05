@@ -1,0 +1,29 @@
+.empty-state {
+  padding: var(--s-8) var(--s-6);
+  border: var(--hairline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  max-width: 560px;
+}
+
+.empty-state-title {
+  margin: 0 0 var(--s-2);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
+}
+
+.empty-state-desc {
+  margin: 0;
+  font-size: var(--text-md);
+  color: var(--ink-muted);
+  line-height: 1.55;
+  max-width: 58ch;
+}
+
+.empty-state-action {
+  margin-top: var(--s-4);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}

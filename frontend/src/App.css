@@ -1,0 +1,36 @@
+/* Toast region for non-blocking background job notifications */
+.toast-region {
+  position: fixed;
+  bottom: var(--s-4);
+  right: var(--s-4);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  max-width: min(400px, calc(100vw - 32px));
+}
+
+.toast-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+}
+
+.toast-item-body {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.toast-link {
+  font-weight: var(--weight-semibold);
+}

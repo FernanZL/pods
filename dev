@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Task runner. Usage: ./dev <command>
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+FAKE=(LLM_PROVIDER=fake TRANSCRIBER=fake EMBEDDINGS_PROVIDER=fake DOWNLOAD_MODE=fake)
+
+case "${1:-help}" in
+  install)      (cd "$ROOT/backend" && uv sync) && (cd "$ROOT/frontend" && npm install) ;;
+  backend)      cd "$ROOT/backend" && DATA_DIR="$ROOT/data" uv run uvicorn app.main:app --reload --port 8000 ;;
+  frontend)     cd "$ROOT/frontend" && npm run dev ;;
+  test)         (cd "$ROOT/backend" && uv run pytest -q) && (cd "$ROOT/frontend" && npm run build) ;;
+  lint)         (cd "$ROOT/backend" && uv run ruff check app tests scripts && uv run ruff format --check app tests scripts) \
+                  && (cd "$ROOT/frontend" && npm run lint) ;;
+  up)           cd "$ROOT" && docker compose up --build -d && echo "Open http://localhost:8080" ;;
+  down)         cd "$ROOT" && docker compose down ;;
+  seed-demo)    cd "$ROOT/backend" && env DATA_DIR="$ROOT/data-demo" "${FAKE[@]}" uv run python -m scripts.seed_demo ;;
+  demo)         cd "$ROOT/backend" && env DATA_DIR="$ROOT/data-demo" "${FAKE[@]}" uv run uvicorn app.main:app --port 8000 ;;
+  *) cat <<'USAGE'
+./dev install     install backend (uv) + frontend (npm) dependencies
+./dev backend     API on :8000 with reload, data in ./data
+./dev frontend    Vite dev server on :5173 (proxies /api to :8000)
+./dev test        backend tests (offline) + frontend type-check/build
+./dev lint        ruff + oxlint
+./dev up | down   full stack in Docker -> http://localhost:8080
+./dev seed-demo   fictional demo library in ./data-demo (fake providers, free)
+./dev demo        API in fake mode against ./data-demo
+USAGE
+  ;;
+esac

@@ -1,0 +1,30 @@
+services:
+  backend:
+    build: ./backend
+    env_file:
+      - path: .env
+        required: false
+    # Run as the host user so files in ./data stay owned by you (override UID/GID if not 1000).
+    user: "${UID:-1000}:${GID:-1000}"
+    environment:
+      DATA_DIR: /data
+      HOME: /tmp
+    volumes:
+      - ./data:/data   # audio, transcripts, vector index, sqlite — persists across rebuilds
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    restart: unless-stopped

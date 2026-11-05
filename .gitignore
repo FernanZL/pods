@@ -1,0 +1,21 @@
+# local data (audio, transcripts, vector index, sqlite) — never commit
+data/
+data-demo/
+.env
+.agent-tasks/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# node
+node_modules/
+dist/
+*.tsbuildinfo
+
+.DS_Store
+.playwright-mcp/
+.impeccable/review/

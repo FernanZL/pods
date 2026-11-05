@@ -1,0 +1,35 @@
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--state-failed);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.error-banner-text {
+  min-width: 0;
+  flex: 1 1 220px;
+  line-height: 1.45;
+}
+
+.error-banner-msg {
+  color: var(--state-failed);
+  font-weight: var(--weight-semibold);
+}
+
+.error-banner-recovery {
+  color: var(--ink-muted);
+}
+
+.error-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-shrink: 0;
+}
