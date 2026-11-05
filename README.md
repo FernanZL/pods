@@ -41,7 +41,7 @@ open http://localhost:8080
 4. Follow progress in **Jobs**. Each episode becomes chat-ready as soon as it is indexed.
 5. **Chat**: ask anything. Narrow the scope to one podcast or chosen episodes. Click a citation to jump to that moment in the episode.
 
-`./data` is a bind mount, so it survives `docker compose down` and rebuilds.
+`./data` is a bind mount, so it survives `docker compose down` and rebuilds. The backend runs as your user so those files stay yours: `./dev up` handles this; with plain `docker compose up`, set `HOST_UID`/`HOST_GID` if your user id isn't 1000.
 
 ## Local development
 

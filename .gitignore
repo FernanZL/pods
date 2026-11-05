@@ -1,5 +1,7 @@
 # local data (audio, transcripts, vector index, sqlite) — never commit
-data/
+# (the empty folder is kept so Docker never creates it as root)
+data/*
+!data/.gitkeep
 data-demo/
 .env
 .agent-tasks/

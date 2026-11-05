@@ -11,7 +11,9 @@ case "${1:-help}" in
   test)         (cd "$ROOT/backend" && uv run pytest -q) && (cd "$ROOT/frontend" && npm run build) ;;
   lint)         (cd "$ROOT/backend" && uv run ruff check app tests scripts && uv run ruff format --check app tests scripts) \
                   && (cd "$ROOT/frontend" && npm run lint) ;;
-  up)           cd "$ROOT" && docker compose up --build -d && echo "Open http://localhost:8080" ;;
+  up)           cd "$ROOT" && mkdir -p data \
+                  && HOST_UID="$(id -u)" HOST_GID="$(id -g)" docker compose up --build -d \
+                  && echo "Open http://localhost:8080" ;;
   down)         cd "$ROOT" && docker compose down ;;
   seed-demo)    cd "$ROOT/backend" && env DATA_DIR="$ROOT/data-demo" "${FAKE[@]}" uv run python -m scripts.seed_demo ;;
   demo)         cd "$ROOT/backend" && env DATA_DIR="$ROOT/data-demo" "${FAKE[@]}" uv run uvicorn app.main:app --port 8000 ;;

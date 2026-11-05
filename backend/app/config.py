@@ -92,7 +92,14 @@ class Settings(BaseSettings):
 
     def ensure_dirs(self) -> None:
         for d in (self.data_dir, self.podcasts_dir, self.chroma_dir):
-            d.mkdir(parents=True, exist_ok=True)
+            try:
+                d.mkdir(parents=True, exist_ok=True)
+            except PermissionError as exc:
+                raise PermissionError(
+                    f"Cannot write to {d}. If running in Docker, the host ./data folder is "
+                    "probably owned by root: run `sudo chown -R $(id -u):$(id -g) data` "
+                    "(or start with ./dev up, which creates it with your user)."
+                ) from exc
 
 
 @lru_cache
