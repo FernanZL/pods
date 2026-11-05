@@ -455,3 +455,9 @@
     padding: var(--s-3);
   }
 }
+
+.make-book-error {
+  font-size: var(--text-xs);
+  color: var(--state-failed);
+  align-self: center;
+}

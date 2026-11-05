@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     # so a slow request is never re-sent (and re-billed) without it being logged.
     transcribe_timeout_seconds: float = 900.0
 
+    # --- Books -----------------------------------------------------------
+    book_parallelism: int = 6  # sections written concurrently
+
     # --- Embeddings / retrieval -----------------------------------------
     embeddings_provider: EmbeddingsProvider = "openai"
     embedding_model: str = "text-embedding-3-small"

@@ -24,6 +24,7 @@ import type {
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CostConfirmDialog } from '../components/CostConfirmDialog'
 import { EmptyState } from '../components/EmptyState'
+import { MakeBookButton } from '../components/MakeBookButton'
 import { ErrorBanner } from '../components/ErrorBanner'
 import { IconExternalLink } from '../components/Icons'
 import { SpeakerStrip } from '../components/SpeakerStrip'
@@ -516,6 +517,13 @@ export function EpisodePage() {
               Process episode
             </button>
           ) : null}
+
+          <MakeBookButton
+            episodeId={episode.id}
+            disabledReason={
+              hasTranscript ? undefined : 'Process and transcribe this episode before making a book'
+            }
+          />
 
           <button
             type="button"

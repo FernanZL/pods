@@ -1,4 +1,6 @@
 import type {
+  Book,
+  BookEstimate,
   DiscoverGenre,
   DiscoverPodcast,
   EpisodeCitationRef,
@@ -255,6 +257,45 @@ export function deleteJob(id: number): Promise<void> {
 /** Delete every finished (done / failed / cancelled) job record. */
 export function clearFinishedJobs(): Promise<{ deleted: number }> {
   return request<{ deleted: number }>('/jobs', { method: 'DELETE' })
+}
+
+// --- Books ---
+export function getBooks(): Promise<Book[]> {
+  return request<Book[]>('/books')
+}
+
+export function estimateBook(episodeId: number): Promise<BookEstimate> {
+  return request<BookEstimate>('/books/estimate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ episode_id: episodeId }),
+  })
+}
+
+export function createBook(episodeId: number): Promise<Book> {
+  return request<Book>('/books', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ episode_id: episodeId }),
+  })
+}
+
+export function reshuffleBook(id: number): Promise<Book> {
+  return request<Book>(`/books/${id}/reshuffle`, { method: 'POST' })
+}
+
+export function deleteBook(id: number): Promise<void> {
+  return request<void>(`/books/${id}`, { method: 'DELETE' })
+}
+
+/** PDF URL; `download` sets Content-Disposition: attachment. */
+export function bookPdfUrl(id: number, download = false): string {
+  return `${API_BASE}/books/${id}/pdf${download ? '?download=true' : ''}`
+}
+
+/** Cover thumbnail; `v` busts the cache after a reshuffle. */
+export function bookCoverUrl(id: number, v: string | number): string {
+  return `${API_BASE}/books/${id}/cover.png?v=${encodeURIComponent(String(v))}`
 }
 
 export function getDiscoverGenres(): Promise<DiscoverGenre[]> {

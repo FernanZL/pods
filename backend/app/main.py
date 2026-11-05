@@ -7,7 +7,17 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import chat, conversations, discover, episodes, index, jobs, meta, podcasts
+from app.api import (
+    books,
+    chat,
+    conversations,
+    discover,
+    episodes,
+    index,
+    jobs,
+    meta,
+    podcasts,
+)
 from app.config import get_settings
 from app.db import init_db
 from app.providers import ProviderNotConfigured
@@ -42,5 +52,5 @@ async def _provider_not_configured(_: Request, exc: ProviderNotConfigured):
     return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 
-for r in (meta, podcasts, discover, episodes, jobs, index, conversations, chat):
+for r in (meta, podcasts, discover, episodes, jobs, index, conversations, chat, books):
     app.include_router(r.router, prefix="/api")

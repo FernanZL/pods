@@ -273,3 +273,62 @@ export function IconSidebar({ size = 15, className }: IconProps) {
     </svg>
   )
 }
+
+export function IconBook({ size = 18, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 18 18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M9 4.5C7.6 3.4 5.4 3 2.75 3.25v10.5c2.65-.25 4.85.15 6.25 1.25 1.4-1.1 3.6-1.5 6.25-1.25V3.25C12.6 3 10.4 3.4 9 4.5z" />
+      <path d="M9 4.5V15" />
+    </svg>
+  )
+}
+
+export function IconDownload({ size = 14, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 14 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M7 1.75v7.5M4 6.5 7 9.5l3-3M2.25 11.75h9.5" />
+    </svg>
+  )
+}
+
+export function IconShuffle({ size = 14, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 14 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M1.75 4h2.1c1.3 0 2.5.7 3.15 1.8l.75 1.4c.65 1.1 1.85 1.8 3.15 1.8h1.35M10.75 7.5 12.25 9l-1.5 1.5" />
+      <path d="M1.75 10h2.1c.8 0 1.6-.3 2.2-.75M8.35 4.75c.6-.45 1.4-.75 2.2-.75h1.7M10.75 2.5 12.25 4l-1.5 1.5" />
+    </svg>
+  )
+}

@@ -10,6 +10,7 @@ dependencies = [
     "httpx>=0.28.1",
     "openai>=3.46.0",
     "pydantic-settings>=2.16.2",
+    "pypdfium2>=5.14.0",
     "python-multipart>=0.0.33",
     "sqlmodel>=0.0.48",
     "sse-starlette>=3.6.0",
@@ -41,3 +42,5 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 [tool.ruff.lint.per-file-ignores]
 # hand-written sample prose
 "scripts/sample_book.py" = ["E501"]
+# stub-model fixture JSON
+"tests/test_books_pipeline.py" = ["E501"]

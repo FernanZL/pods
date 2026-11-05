@@ -1,6 +1,7 @@
 import { Navigate, Outlet, Route, Routes, useParams } from 'react-router-dom'
 import { AppShell } from './components/AppShell'
 import { ToastProvider } from './components/ToastProvider'
+import { BooksPage } from './pages/BooksPage'
 import { ChatPage } from './pages/ChatPage'
 import { EpisodePage } from './pages/EpisodePage'
 import { JobsPage } from './pages/JobsPage'
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/c/:conversationId" element={<LegacyConversationRedirect />} />
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/episodes/:id" element={<EpisodePage />} />
+          <Route path="/books" element={<BooksPage />} />
           <Route path="/jobs" element={<JobsPage />} />
           <Route path="*" element={<NotFound />} />
         </Route>

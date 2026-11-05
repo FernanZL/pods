@@ -200,7 +200,11 @@ def _cover(book: Book, segs: Sequence[Segment], theme: Theme, image_uri: str | N
         f"{_ts(book.duration)} of conversation</span>"
         f"<span>{'Fictional demo content' if book.demo else 'Made with Pods'}</span></div>"
     )
-    title_el = f'<h1 class="cover-title">{title}</h1>'
+    n = len(book.title)
+    size = 64 if n <= 18 else 54 if n <= 28 else 44 if n <= 42 else 36 if n <= 60 else 30
+    if layout == "column":
+        size = round(size * 1.08)
+    title_el = f'<h1 class="cover-title" style="font-size:{size}pt">{title}</h1>'
     deck = f'<p class="cover-deck">{_e(book.deck)}</p>'
     tapes_el = f'<div class="cover-tapes">{tapes}</div>'
     if layout == "panel":

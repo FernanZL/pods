@@ -366,6 +366,29 @@ class JobWorker:
             session.commit()
         return self._make_progress_cb(job_id, step_name)
 
+    def _run_book_job(self, job_id: int) -> None:
+        from app.books import pipeline
+        from app.models import Book
+
+        with db.session_scope() as session:
+            book = session.exec(select(Book).where(Book.job_id == job_id)).first()
+            if book is None or book.id is None:
+                raise ValueError("book job has no book")
+            book_id = book.id
+        cb = self._begin_step(job_id, "book")
+        try:
+            pipeline.build_book(book_id, on_progress=cb)
+        except BaseException as exc:
+            with db.session_scope() as session:
+                book = session.get(Book, book_id)
+                if book is not None:
+                    cancelled = isinstance(exc, JobCancelled)
+                    book.status = "failed"
+                    book.error = "Cancelled" if cancelled else str(exc)[:500]
+                    session.add(book)
+                    session.commit()
+            raise
+
     def _execute_job_sync(
         self,
         job_id: int,
@@ -407,6 +430,8 @@ class JobWorker:
 
             cb = self._begin_step(job_id, "rebuild_index")
             indexing.rebuild_index(on_progress=cb)
+        elif kind == "book":
+            self._run_book_job(job_id)
         else:
             raise ValueError(f"Unknown job kind: {kind!r}")
 

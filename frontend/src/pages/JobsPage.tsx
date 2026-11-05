@@ -40,6 +40,8 @@ function formatKind(kind: JobKind): string {
       return 'Re-index'
     case 'rebuild_index':
       return 'Rebuild index'
+    case 'book':
+      return 'Book'
   }
 }
 

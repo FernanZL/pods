@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { isJobActive, useJobs } from '../api/hooks'
 import { fmtNumber } from '../utils/format'
-import { IconChat, IconJobs, IconLibrary } from './Icons'
+import { IconBook, IconChat, IconJobs, IconLibrary } from './Icons'
 import { TopbarSlotContext } from './topbarSlot'
 import './AppShell.css'
 
@@ -44,6 +44,10 @@ export function AppShell({ children }: AppShellProps) {
           <NavLink to="/library" className={() => linkClass(isLibraryRoute)}>
             <IconLibrary size={16} />
             <span>Library</span>
+          </NavLink>
+          <NavLink to="/books" className={({ isActive }) => linkClass(isActive)}>
+            <IconBook size={16} />
+            <span>Books</span>
           </NavLink>
           <NavLink to="/jobs" className={({ isActive }) => linkClass(isActive)}>
             <IconJobs size={16} />

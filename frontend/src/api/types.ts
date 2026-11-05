@@ -3,7 +3,7 @@
 export type Step = 'download' | 'transcribe' | 'index'
 export type EpisodeStatus = 'new' | 'downloaded' | 'transcribed' | 'indexed'
 export type JobStatus = 'queued' | 'running' | 'done' | 'failed' | 'cancelled'
-export type JobKind = 'process' | 'summarize' | 'reindex' | 'rebuild_index'
+export type JobKind = 'process' | 'summarize' | 'reindex' | 'rebuild_index' | 'book'
 export type ISODate = string
 
 export interface Prices {
@@ -206,4 +206,41 @@ export interface DiscoverPodcast {
 export interface DiscoverGenre {
   id: number
   name: string
+}
+
+// --- Books -----------------------------------------------------------------
+export type BookStatus = 'queued' | 'writing' | 'ready' | 'failed'
+
+export interface Book {
+  id: number
+  episode_id: number
+  episode_number: number
+  episode_title: string
+  podcast_title: string
+  status: BookStatus
+  job_id: number | null
+  progress: number
+  message: string
+  title: string
+  seed: number
+  family: string
+  art: string
+  chapters: number
+  words: number
+  pages: number
+  quotes: number
+  rejected_quotes: number
+  error: string | null
+  created_at: ISODate
+  updated_at: ISODate
+}
+
+export interface BookEstimate {
+  episode_id: number
+  transcript_words: number
+  chapters: number
+  target_words: number
+  est_pages: number
+  llm_usd: number
+  model: string
 }

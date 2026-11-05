@@ -8,6 +8,11 @@ import {
 } from '@tanstack/react-query'
 import {
   cancelJob,
+  createBook,
+  deleteBook,
+  estimateBook,
+  getBooks,
+  reshuffleBook,
   clearFinishedJobs,
   deleteJob,
   getDiscoverGenres,
@@ -48,6 +53,7 @@ export const queryKeys = {
   episode: (id: number) => ['episode', id] as const,
   episodeAll: ['episode'] as const,
   episodeCitations: (id: number) => ['episodeCitations', id] as const,
+  books: ['books'] as const,
   discoverGenres: ['discoverGenres'] as const,
   discoverSearch: (q: string) => ['discoverSearch', q] as const,
   discoverTop: (genreId: number | null) => ['discoverTop', genreId] as const,
@@ -313,6 +319,49 @@ export function useCancelJob() {
       void qc.invalidateQueries({ queryKey: queryKeys.episodesAll })
       void qc.invalidateQueries({ queryKey: queryKeys.episodeAll })
     },
+  })
+}
+
+/** Books, polling every 2 s while any is being written. */
+export function useBooks() {
+  return useQuery({
+    queryKey: queryKeys.books,
+    queryFn: getBooks,
+    refetchInterval: (q) =>
+      (q.state.data ?? []).some((b) => b.status === 'queued' || b.status === 'writing')
+        ? 2000
+        : false,
+  })
+}
+
+export function useEstimateBook() {
+  return useMutation({ mutationFn: (episodeId: number) => estimateBook(episodeId) })
+}
+
+export function useCreateBook() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (episodeId: number) => createBook(episodeId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.books })
+      void qc.invalidateQueries({ queryKey: queryKeys.jobsAll })
+    },
+  })
+}
+
+export function useReshuffleBook() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => reshuffleBook(id),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.books }),
+  })
+}
+
+export function useDeleteBook() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => deleteBook(id),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.books }),
   })
 }
 

@@ -94,6 +94,13 @@ Backends (`providers/transcription/`):
 | GET `/discover/search` | `q, limit=20` | `DiscoverPodcast[]` via the Apple Podcasts directory (no key); 502 if unreachable | discover |
 | GET `/discover/top` | `genre_id?, limit=24` | `DiscoverPodcast[]` top chart resolved to feed URLs (cached 1 h) | discover |
 | GET `/discover/genres` | | `DiscoverGenre[]` | discover |
+| POST `/books/estimate` | `{episode_id}` | `BookEstimate` (chapters, target words, pages, USD) | books |
+| POST `/books` | `{episode_id}` | `BookOut` (201); queues a `book` job; 409 without a transcript | books |
+| GET `/books`, GET `/books/{id}` | | `BookOut[]` / `BookOut` (status, live progress) | books |
+| POST `/books/{id}/reshuffle` | | `BookOut`: new design seed, re-rendered, no model calls | books |
+| GET `/books/{id}/pdf` | `?download=true` | the PDF (inline or attachment) | books |
+| GET `/books/{id}/cover.png` | | cover thumbnail | books |
+| DELETE `/books/{id}` | | 204; 409 while its job is active | books |
 | POST `/jobs/{id}/cancel` | | `JobOut` | ingest |
 | POST `/jobs/{id}/retry` | | `JobOut` (new job, same steps) | ingest |
 | GET `/index/stats` | | `IndexStats` | rag |
@@ -125,7 +132,14 @@ All pages share one indigo top bar (Pods wordmark, Chat / Library / Jobs, and a 
 - `/chat`, `/chat/:conversationId`: Chat. The Conversations menu sits in the top-bar slot; answers have the References column beside them. `?q=` sends a question on arrival. Old `/c/:id` links redirect.
 - `/library`: "Your library" tab (feeds and the episode table, process with cost confirm) and a "Browse podcasts" tab (`?tab=browse`): name search and genre top charts from the Apple directory, one-click Add, RSS URL fallback.
 - `/episodes/:id`: player, diarized transcript, cited-passage margin. `?t=` seeks and scrolls.
+- `/books`: generated books as covers; Open / Download / Reshuffle design / Delete; live progress while writing. Episodes have a "Make a book" button (estimate, confirm, write).
 - `/jobs`: live queue, Cancel / Retry / Delete per job, "Clear finished".
+
+## Books (`app/books/`)
+- `pipeline.py`: size (chapters ≈ minutes / 14, target ≈ 70% of spoken words) → one planning call over the whole numbered transcript (titles, chapters, sections mapped to segment ranges, glossary, quote picks) → sections written in parallel (`BOOK_PARALLELISM`), each from its own transcript slice with a word target proportional to it → quotes verified → `book.json` → render.
+- `verify.py`: quotes are marked `⟦…⟧` by the writer and matched word for word (case/punctuation-insensitive) to a segment; attribution comes from that segment. Unverifiable inline quotes become plain narrative; unverifiable pull quotes are dropped.
+- `theme.py`: a seed picks one of 8 colour families (contrast-guarded), 4 font pairs, cover art (tapes, rings, dots, waveform, mosaic, stripes, plain field, duotoned podcast artwork), cover layout, opener style and ornaments. `render.py` + `book.css` typeset with WeasyPrint; `art.py` / `tapes.py` draw the art from the conversation.
+- Files: `data/podcasts/<podcast>/<episode>/books/<id>/{plan.json, book.json, book.pdf, cover.png}`.
 
 ## Fake / demo mode
 Set `LLM_PROVIDER=fake TRANSCRIBER=fake EMBEDDINGS_PROVIDER=fake DOWNLOAD_MODE=fake`.

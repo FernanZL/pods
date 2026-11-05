@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 Step = Literal["download", "transcribe", "index"]
 EpisodeStatus = Literal["new", "downloaded", "transcribed", "indexed"]
 JobStatus = Literal["queued", "running", "done", "failed", "cancelled"]
-JobKind = Literal["process", "summarize", "reindex", "rebuild_index"]
+JobKind = Literal["process", "summarize", "reindex", "rebuild_index", "book"]
 
 
 # --- Config ----------------------------------------------------------------
@@ -240,3 +240,44 @@ class DiscoverPodcast(BaseModel):
 class DiscoverGenre(BaseModel):
     id: int
     name: str
+
+
+# --- Books ---------------------------------------------------------------------
+
+
+class BookCreate(BaseModel):
+    episode_id: int
+
+
+class BookEstimate(BaseModel):
+    episode_id: int
+    transcript_words: int
+    chapters: int
+    target_words: int
+    est_pages: int
+    llm_usd: float
+    model: str
+
+
+class BookOut(BaseModel):
+    id: int
+    episode_id: int
+    episode_number: int
+    episode_title: str
+    podcast_title: str
+    status: Literal["queued", "writing", "ready", "failed"]
+    job_id: int | None
+    progress: float  # 0..1 while writing
+    message: str
+    title: str
+    seed: int
+    family: str
+    art: str
+    chapters: int
+    words: int
+    pages: int
+    quotes: int
+    rejected_quotes: int
+    error: str | None
+    created_at: datetime
+    updated_at: datetime

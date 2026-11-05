@@ -63,6 +63,10 @@ open http://localhost:8080
 
 Fake mode (`LLM_PROVIDER=fake TRANSCRIBER=fake EMBEDDINGS_PROVIDER=fake DOWNLOAD_MODE=fake`) swaps every paid provider for a deterministic local stand-in. The test suite always runs this way.
 
+## Books
+
+Any transcribed episode can become a long-form PDF book: open the episode and choose **Make a book**. Pods plans chapters from the whole conversation, writes each section from its own stretch of the transcript (a 2-hour episode becomes roughly 8–10 chapters and 15–20k words), checks every quote word for word against the recording, and typesets it with its own design: one of 8 colour families, 4 font pairings and 8 kinds of cover art, several drawn from the conversation itself. **Reshuffle design** in Books gives the same text a new look for free. Writing a book with `gpt-6-luna` costs a few cents.
+
 ## Costs and models
 
 - Transcription is the main cost: roughly duration × per-minute price. Prices live in `.env` / `app/config.py` (`PRICE_*`). Check them against current OpenAI pricing.

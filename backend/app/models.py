@@ -89,3 +89,29 @@ class Message(SQLModel, table=True):
     # list[Citation-as-dict] (see schemas.Citation); empty for user messages
     citations: list[dict[str, Any]] = Field(default_factory=list, sa_column=Column(JSON))
     created_at: datetime = Field(default_factory=utcnow)
+
+
+class Book(SQLModel, table=True):
+    """A long-form PDF book written from one episode.
+
+    The text (book.json) is generated once; the design is a seeded theme, so
+    "reshuffle" re-renders the PDF with a new seed without any model calls.
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    episode_id: int = Field(foreign_key="episode.id", index=True)
+    job_id: int | None = Field(default=None, index=True)  # the job writing it
+    status: str = Field(default="queued", index=True)  # queued | writing | ready | failed
+    seed: int
+    title: str = ""
+    family: str = ""  # colour family of the current design
+    art: str = ""  # cover art kind of the current design
+    chapters: int = 0
+    words: int = 0
+    pages: int = 0
+    quotes: int = 0  # verified quotes in the book
+    rejected_quotes: int = 0  # writer quotes that failed verification (kept as narrative)
+    dir_path: str | None = None  # relative to data_dir
+    error: str | None = None
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
