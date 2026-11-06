@@ -21,3 +21,5 @@ dist/
 .DS_Store
 .playwright-mcp/
 .impeccable/review/
+# design sketches with embedded podcast artwork and book covers: local only
+.impeccable/mocks/home/
