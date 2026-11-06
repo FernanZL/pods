@@ -9,7 +9,7 @@ from typing import cast
 
 from sqlmodel import Session, col, select
 
-from app import db
+from app import db, spend
 from app.config import get_settings
 from app.domain import ProgressFn
 from app.models import Episode, Job, utcnow
@@ -113,6 +113,7 @@ def job_to_out(session: Session, job: Job) -> JobOut:
         progress=job.progress,
         message=job.message,
         error=job.error,
+        cost_usd=job.cost_usd,
         created_at=job.created_at,
         started_at=job.started_at,
         finished_at=job.finished_at,
@@ -269,61 +270,76 @@ class JobWorker:
             steps = list(job.steps)
             force = job.force
 
+        meter = spend.Meter()
         try:
-            await asyncio.to_thread(
-                self._execute_job_sync,
-                job_id,
-                kind,
-                episode_id,
-                steps,
-                force,
-            )
-        except JobCancelled:
+            try:
+                await asyncio.to_thread(
+                    spend.run_with,
+                    meter,
+                    self._execute_job_sync,
+                    job_id,
+                    kind,
+                    episode_id,
+                    steps,
+                    force,
+                )
+            except JobCancelled:
+                with db.session_scope() as session:
+                    job = session.get(Job, job_id)
+                    if job is not None:
+                        job.status = "cancelled"
+                        job.current_step = None
+                        job.message = "Cancelled"
+                        job.finished_at = utcnow()
+                        session.add(job)
+                        session.commit()
+                return
+            except Exception as exc:
+                err_text = str(exc).strip() or exc.__class__.__name__
+                with db.session_scope() as session:
+                    job = session.get(Job, job_id)
+                    if job is not None:
+                        if job.status == "cancelled" or self._is_cancelled_fast(job_id):
+                            job.status = "cancelled"
+                            job.message = "Cancelled"
+                        else:
+                            job.status = "failed"
+                            job.error = err_text
+                            job.message = "Failed"
+                        job.current_step = None
+                        job.finished_at = utcnow()
+                        session.add(job)
+                        session.commit()
+                return
+
             with db.session_scope() as session:
                 job = session.get(Job, job_id)
-                if job is not None:
+                if job is None:
+                    return
+                if job.status == "cancelled" or self._is_cancelled_fast(job_id):
                     job.status = "cancelled"
                     job.current_step = None
                     job.message = "Cancelled"
                     job.finished_at = utcnow()
-                    session.add(job)
-                    session.commit()
-            return
-        except Exception as exc:
-            err_text = str(exc).strip() or exc.__class__.__name__
-            with db.session_scope() as session:
-                job = session.get(Job, job_id)
-                if job is not None:
-                    if job.status == "cancelled" or self._is_cancelled_fast(job_id):
-                        job.status = "cancelled"
-                        job.message = "Cancelled"
-                    else:
-                        job.status = "failed"
-                        job.error = err_text
-                        job.message = "Failed"
+                else:
+                    job.status = "done"
                     job.current_step = None
+                    job.progress = 1.0
+                    job.message = "Completed"
                     job.finished_at = utcnow()
-                    session.add(job)
-                    session.commit()
-            return
+                session.add(job)
+                session.commit()
+        finally:
+            if meter.by_model:
+                self._save_cost(job_id, meter)
 
+    def _save_cost(self, job_id: int, meter: spend.Meter) -> None:
         with db.session_scope() as session:
             job = session.get(Job, job_id)
-            if job is None:
-                return
-            if job.status == "cancelled" or self._is_cancelled_fast(job_id):
-                job.status = "cancelled"
-                job.current_step = None
-                job.message = "Cancelled"
-                job.finished_at = utcnow()
-            else:
-                job.status = "done"
-                job.current_step = None
-                job.progress = 1.0
-                job.message = "Completed"
-                job.finished_at = utcnow()
-            session.add(job)
-            session.commit()
+            if job is not None:
+                job.cost_usd = round(meter.usd, 4)
+                session.add(job)
+                session.commit()
 
     def _make_progress_cb(self, job_id: int, step_name: str) -> ProgressFn:
         last_write = 0.0

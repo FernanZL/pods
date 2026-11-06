@@ -95,8 +95,8 @@ Backends (`providers/transcription/`):
 | GET `/discover/search` | `q, limit=20` | `DiscoverPodcast[]` via the Apple Podcasts directory (no key); 502 if unreachable | discover |
 | GET `/discover/top` | `genre_id?, limit=24` | `DiscoverPodcast[]` top chart resolved to feed URLs (cached 1 h) | discover |
 | GET `/discover/genres` | | `DiscoverGenre[]` | discover |
-| POST `/books/estimate` | `{episode_id}` | `BookEstimate` (chapters, target words, pages, USD) | books |
-| POST `/books` | `{episode_id}` | `BookOut` (201); queues a `book` job; 409 without a transcript | books |
+| POST `/books/estimate` | `{episode_id}` | `BookEstimate` (chapters, target words, pages, USD, `voices`: speakers who can tell it, host first) | books |
+| POST `/books` | `{episode_id, narrator?}` | `BookOut` (201); queues a `book` job; 409 without a transcript; 422 if `narrator` (a voice's label or name) is not a main named speaker | books |
 | GET `/books`, GET `/books/{id}` | | `BookOut[]` / `BookOut` (status, live progress) | books |
 | POST `/books/{id}/reshuffle` | | `BookOut`: new design seed, re-rendered, no model calls | books |
 | GET `/books/{id}/pdf` | `?download=true` | the PDF (inline or attachment) | books |
@@ -141,11 +141,15 @@ All pages share one indigo top bar (Pods wordmark, Chat / Library / Jobs, and a 
 - `verify.py`: quotes are marked `⟦…⟧` by the writer and matched word for word (case/punctuation-insensitive) to a segment; attribution comes from that segment. Unverifiable inline quotes become plain narrative; unverifiable pull quotes are dropped.
 - `theme.py`: a seed picks one of 8 colour families (contrast-guarded), 4 font pairs, cover art (tapes, rings, dots, waveform, mosaic, stripes, plain field, duotoned podcast artwork), cover layout, opener style and ornaments. `render.py` + `book.css` typeset with WeasyPrint; `art.py` / `tapes.py` draw the art from the conversation.
 - Editor: after writing, one call reviews the narration against the full transcript (misattribution, factual slips, overstatement, repetition, housekeeping, off-topic). High/medium issues trigger one targeted rewrite of just those sections, re-verified; a rewrite that collapses the section is discarded. Results in `review.json` and on the book card.
+- Voice: `Book.narrator` empty = a third-person narrator; a speaker's name = told in that speaker's first person. `speaker_roles` lists the main named speakers with a host guess (named in the podcast title, else most questions). `style(ctx)` / `quoting(ctx)` switch the writer and planner prompts; the editor also flags first-person material the speaker never voiced. The PDF's "How this book was made" note and colophon say the voice is AI-written, not by that person.
 - Files: `data/podcasts/<podcast>/<episode>/books/<id>/{plan.json, book.json, review.json, book.pdf, cover.png}`.
 - `scripts.repair_book <id>`: re-check and re-render an existing book with the current rules (no model calls).
 
 ## Transcript check (`services/transcript_check.py`)
 Runs at the end of every transcription and on demand. Mechanical: gaps ≥ 45 s, transcript ending early, repeated-text loops, one voice holding > 95%, stray noise labels. One small model call confirms speaker names; a high-confidence swap is corrected in the transcript, anything less is reported. Never blocks; results live in `Episode.transcript_check` and show on the episode page.
+
+## Measured spend (`app/spend.py`)
+Every paid call (transcription chunks, chat completions, embeddings) passes the `usage` OpenAI returns to `spend.record`, which prices it (`PRICE_*`) on the current `Meter`. The worker opens a meter per job (`Job.cost_usd`); `transcribe_episode` opens a nested one for the transcription itself (`Episode.transcribe_cost`: USD, tokens per model, minutes). Thread pools submit through `spend.submit` so the meter follows. `services/estimate.transcription_rate` uses the measured USD/min of past transcriptions with the same model (≥ 5 min of them) instead of the configured price. A cancelled job's in-flight chunks finish after the job stops, so its recorded cost can be slightly low.
 
 ## Database migrations
 `db.init_db` adds columns that models gained since a table was created (SQLite `ADD COLUMN`, existing rows keep their data and get the column default).

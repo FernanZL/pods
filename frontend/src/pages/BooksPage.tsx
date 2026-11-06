@@ -10,7 +10,7 @@ import { IconDownload, IconShuffle, IconTrash } from '../components/Icons'
 import { Skeleton, Spinner } from '../components/Spinner'
 import { StatusStamp } from '../components/StatusStamp'
 import { useToast } from '../components/ToastContext'
-import { fmtEpNumber, fmtNumber, fmtRelativeDate } from '../utils/format'
+import { fmtEpNumber, fmtNumber, fmtRelativeDate, fmtUsd } from '../utils/format'
 import './BooksPage.css'
 
 export function BooksPage() {
@@ -86,6 +86,7 @@ function BookCard({ book, onDelete }: { book: Book; onDelete: () => void }) {
     book.chapters ? `${fmtNumber(book.chapters)} chapters` : null,
     book.words ? `${fmtNumber(book.words)} words` : null,
     book.pages ? `${fmtNumber(book.pages)} pages` : null,
+    ready && book.cost_usd != null ? `cost ${fmtUsd(book.cost_usd)}` : null,
   ]
     .filter(Boolean)
     .join(' · ')
@@ -143,6 +144,9 @@ function BookCard({ book, onDelete }: { book: Book; onDelete: () => void }) {
         <span className="book-meta">
           {book.podcast_title} · {fmtRelativeDate(book.created_at)}
         </span>
+        {book.narrator ? (
+          <span className="book-voice">Told by {book.narrator}, in the first person</span>
+        ) : null}
         {stats ? <span className="book-stats">{stats}</span> : null}
         {ready && book.review_summary ? (
           <span className="book-editor" title={book.review_summary}>
@@ -193,7 +197,7 @@ function BookCard({ book, onDelete }: { book: Book; onDelete: () => void }) {
               className="btn btn-sm btn-primary"
               disabled={retry.isPending}
               onClick={() =>
-                retry.mutate(book.episode_id, {
+                retry.mutate({ episodeId: book.episode_id, narrator: book.narrator || null }, {
                   onError: (e) =>
                     setErr(e instanceof ApiError ? e.detail : 'Could not start a new book.'),
                 })

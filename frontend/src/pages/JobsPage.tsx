@@ -25,6 +25,7 @@ import {
   fmtEpNumber,
   fmtNumber,
   fmtRelativeDate,
+  fmtUsd,
 } from '../utils/format'
 import './JobsPage.css'
 
@@ -446,6 +447,11 @@ export function JobsPage() {
                         {job.started_at
                           ? `Elapsed ${fmtElapsed(job.started_at, job.finished_at)}`
                           : 'Waiting'}
+                        {job.cost_usd != null ? (
+                          <span title="Measured from the usage OpenAI billed for this job">
+                            {` · ${fmtUsd(job.cost_usd)}`}
+                          </span>
+                        ) : null}
                       </span>
                     </td>
 

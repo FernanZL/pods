@@ -15,6 +15,7 @@ from openai import (
     RateLimitError,
 )
 
+from app import spend
 from app.domain import ChatMessage
 
 
@@ -105,6 +106,7 @@ class OpenAICompatibleLLM:
         for attempt in range(max_tries):
             try:
                 response = self._client.chat.completions.create(**kwargs)
+                spend.record(self.model, getattr(response, "usage", None))
                 choices = getattr(response, "choices", None)
                 if not choices:
                     return ""

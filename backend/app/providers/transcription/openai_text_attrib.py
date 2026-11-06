@@ -9,6 +9,7 @@ from typing import Any
 
 from openai import OpenAI
 
+from app import spend
 from app.domain import ChatMessage, KnownSpeaker, LLMClient, Segment, TranscriptionContext
 from app.providers import get_llm
 from app.providers.transcription.base import get_field, with_retry
@@ -113,6 +114,8 @@ class OpenAITextTranscriber:
                 )
 
         resp = with_retry(_call)
+        if not isinstance(resp, str):
+            spend.record(self.name, get_field(resp, "usage"))
         text = resp if isinstance(resp, str) else str(get_field(resp, "text", "") or "")
         cleaned = text.strip()
         if not cleaned:

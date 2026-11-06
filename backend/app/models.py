@@ -54,6 +54,8 @@ class Episode(SQLModel, table=True):
     summarized_at: datetime | None = None
     # Transcript health check (see services/transcript_check.py): {"ok", "issues", ...}
     transcript_check: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
+    # Measured cost of the last transcription (spend.Meter.to_dict() plus "minutes")
+    transcribe_cost: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
 
 
 class Job(SQLModel, table=True):
@@ -69,6 +71,7 @@ class Job(SQLModel, table=True):
     progress: float = 0.0  # 0..1 within current_step
     message: str = ""
     error: str | None = None
+    cost_usd: float | None = None  # measured API spend (None = no paid calls recorded)
     created_at: datetime = Field(default_factory=utcnow)
     started_at: datetime | None = None
     finished_at: datetime | None = None
@@ -116,6 +119,7 @@ class Book(SQLModel, table=True):
     review_issues: int = 0  # problems the editor found in the narration
     review_fixed: int = 0  # ...of which were fixed by rewriting the section
     review_summary: str = ""
+    narrator: str = ""  # display name of the speaker telling it in the first person ("" = narrator)
     dir_path: str | None = None  # relative to data_dir
     error: str | None = None
     created_at: datetime = Field(default_factory=utcnow)

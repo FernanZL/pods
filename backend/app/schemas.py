@@ -113,6 +113,7 @@ class EpisodeDetail(EpisodeOut):
     segments: list[SegmentOut]  # [] until transcribed
     summary_markdown: str | None
     transcript_check: TranscriptCheck | None = None
+    transcribe_cost_usd: float | None = None  # measured cost of the last transcription
 
 
 class SelectionRequest(BaseModel):
@@ -136,6 +137,8 @@ class CostEstimate(BaseModel):
     llm_usd: float  # speaker naming / attribution calls
     total_usd: float
     skipped_already_done: int  # episodes needing no paid work
+    transcription_per_min: float = 0.0  # USD per audio minute used for the estimate
+    rate_measured: bool = False  # True: rate comes from this app's metered transcriptions
 
 
 # --- Jobs ------------------------------------------------------------------
@@ -152,6 +155,7 @@ class JobOut(BaseModel):
     progress: float
     message: str
     error: str | None
+    cost_usd: float | None = None  # measured API spend of the job
     created_at: datetime
     started_at: datetime | None
     finished_at: datetime | None
@@ -263,6 +267,15 @@ class DiscoverGenre(BaseModel):
 
 class BookCreate(BaseModel):
     episode_id: int
+    # Speaker (label or name from BookEstimate.voices) who tells the book in the first
+    # person; None = a third-person narrator.
+    narrator: str | None = None
+
+
+class BookVoice(BaseModel):
+    label: str  # transcript speaker label
+    name: str
+    role: Literal["host", "guest"]
 
 
 class BookEstimate(BaseModel):
@@ -273,6 +286,7 @@ class BookEstimate(BaseModel):
     est_pages: int
     llm_usd: float
     model: str
+    voices: list[BookVoice] = []  # speakers who can tell the book, host first
 
 
 class BookOut(BaseModel):
@@ -297,6 +311,8 @@ class BookOut(BaseModel):
     review_issues: int
     review_fixed: int
     review_summary: str
+    narrator: str = ""  # speaker telling it in the first person ("" = narrator)
+    cost_usd: float | None = None  # measured API spend of the writing job
     error: str | None
     created_at: datetime
     updated_at: datetime

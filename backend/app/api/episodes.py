@@ -227,6 +227,7 @@ def get_episode(episode_id: int, session: SessionDep) -> EpisodeDetail:
         indexed_at=episode.indexed_at,
         summarized_at=episode.summarized_at,
         transcript_check=episode.transcript_check,
+        transcribe_cost_usd=(episode.transcribe_cost or {}).get("usd"),
         segments=segments,
         summary_markdown=summary_markdown,
     )

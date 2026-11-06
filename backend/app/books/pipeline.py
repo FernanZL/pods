@@ -67,10 +67,22 @@ BANNED = [
     "nestled", "a symphony of", "in a world where",
 ]  # fmt: skip
 
-STYLE = """Editorial preset: MAGAZINE FEATURE (long-form).
+_VOICE_NARRATOR = """Editorial preset: MAGAZINE FEATURE (long-form).
 - Voice: a sharp, warm feature writer narrating in the third person about the conversation.
   The narrator is NOT the speakers: never write in a speaker's first person, never invent
-  what they think, never put words in their mouths.
+  what they think, never put words in their mouths."""
+
+_VOICE_FIRST_PERSON = """Editorial preset: FIRST-PERSON RETELLING (long-form).
+- Voice: {name}, the {role} of this episode, tells the story of this conversation in the
+  first person ("I", "me", "my"), looking back on it as a long-form essay. Everyone else
+  ({others}) appears in the third person, by name.
+- My side of the story comes ONLY from {name}'s own lines in the transcript: what I asked,
+  said, argued, shared or reacted to. Never invent memories, feelings, scenes, settings,
+  backstory or opinions that {name} did not voice in this conversation.
+- Credit every idea to whoever said it. A point another speaker makes is theirs ("{other}
+  argues that..."), never "I". A point I make in the episode can be told in my voice."""
+
+_STYLE_BODY = """\
 - Story-driven: open sections with a concrete moment, question or tension from the talk;
   follow the argument as it develops; keep the examples, stories, numbers, caveats and
   disagreements that make it real. Explain technical ideas plainly without dumbing down.
@@ -81,13 +93,37 @@ STYLE = """Editorial preset: MAGAZINE FEATURE (long-form).
   inside paragraphs.
 - British or American spelling consistently (follow the transcript)."""
 
-QUOTING = """Quoting rules (strict, checked by code against the transcript):
+_QUOTING = """Quoting rules (strict, checked by code against the transcript):
 - Wrap every verbatim quote in ⟦ and ⟧ inside paragraph text, e.g. as she puts it, ⟦the
   morning sets the clock⟧. Copy the words EXACTLY from the transcript slice (5-30 words, one
   contiguous passage, no ellipses, no edits). Attribution comes from the transcript, so
   say who is speaking in your own words around the quote.
 - Use 2-5 inline quotes per section, plus at most one "pull" quote (a striking line, 8-30
   words, also verbatim). Quotes that do not match the transcript exactly are removed."""
+
+_QUOTING_FIRST_PERSON = """
+- Quote mostly the other speakers. My own lines are usually told in my voice rather than
+  quoted; when one is worth quoting, frame it as mine (as I put it, ⟦...⟧)."""
+
+
+def style(ctx: dict[str, str]) -> str:
+    """Editorial style for the book's voice: a third-person narrator, or a speaker in the
+    first person (ctx["narrator"] is that speaker's display name)."""
+    name = ctx.get("narrator", "")
+    if not name:
+        return f"{_VOICE_NARRATOR}\n{_STYLE_BODY}"
+    others = [s for s in ctx.get("speakers", "").split("|") if s and s != name]
+    voice = _VOICE_FIRST_PERSON.format(
+        name=name,
+        role=ctx.get("narrator_role") or "host",
+        others=" and ".join(others) or "the other speakers",
+        other=(others[0].split()[0] if others else "My guest"),
+    )
+    return f"{voice}\n{_STYLE_BODY}"
+
+
+def quoting(ctx: dict[str, str]) -> str:
+    return _QUOTING + (_QUOTING_FIRST_PERSON if ctx.get("narrator") else "")
 
 
 @dataclass
@@ -220,10 +256,11 @@ Rules:
   section (the writer will skip them) rather than making a section of them.
 - Chapters follow the conversation's real arcs, not equal time slices.
 - Quotes must be copied exactly from the transcript.
+- Title, deck and every dek are in the same voice as the book (see the style below).
 - Opener and closing quotes must be substantive lines from the conversation itself: never
   the intro, the outro, thanks, sponsor reads, or requests to subscribe/follow/review.
 - The whole book will be about {target} words.
-{STYLE}"""
+{style(ctx)}"""
     user = (
         f"Podcast: {ctx['podcast']}\nEpisode {ctx['number']}: {ctx['title']}\n"
         f"Description: {ctx['description'][:1500]}\n\nTRANSCRIPT (numbered segments):\n"
@@ -303,9 +340,9 @@ def _section_messages(
     system = f"""You are writing one section of a long-form book that retells a podcast
 conversation as narrative non-fiction.
 
-{STYLE}
+{style(ctx)}
 
-{QUOTING}
+{quoting(ctx)}
 
 Never use these words or phrases: {banned}.
 
@@ -323,7 +360,10 @@ Return ONLY a JSON object:
 - No headings (the section heading is set by the layout). Do not repeat earlier sections.
 - Never narrate the show's own housekeeping: sponsors and ads, links, "subscribe", "follow",
   "leave a review", thanks for listening, intros and outros. If the slice ends with the
-  outro, end the section on the last substantive idea instead."""
+  outro, end the section on the last substantive idea instead.
+- The reader sees only the book. Never mention the transcript, the slice, an excerpt,
+  segments or the recording, and never say where they start or stop ("the transcript ends
+  before..."). If the slice stops mid-thought, end on its last complete idea."""
     user = (
         f"Book: {plan.title}\nPodcast: {ctx['podcast']}, episode {ctx['number']}: "
         f"{ctx['title']}\nChapter {ci + 1}: {ch.title} ({ch.dek})\n"
@@ -341,7 +381,7 @@ class Written:
     rejected: int
 
 
-def _to_blocks(data: dict[str, Any], transcript: Transcript) -> Written:
+def _to_blocks(data: dict[str, Any], transcript: Transcript, own: str = "") -> Written:
     blocks: list[Block] = []
     quotes = rejected = 0
     pulls = callouts = 0
@@ -351,7 +391,7 @@ def _to_blocks(data: dict[str, Any], transcript: Transcript) -> Written:
         kind = raw.get("type")
         try:
             if kind == "p" and str(raw.get("text") or "").strip():
-                runs, bad = resolve_runs(transcript, str(raw["text"]).strip())
+                runs, bad = resolve_runs(transcript, str(raw["text"]).strip(), own)
                 rejected += len(bad)
                 quotes += sum(1 for r in runs if isinstance(r, Quote))
                 blocks.append(Paragraph(runs))
@@ -380,7 +420,7 @@ def _write_section(plan: Plan, ci: int, si: int, transcript: Transcript, ctx) ->
         _section_messages(plan, ci, si, transcript, ctx),
         max_tokens=int(sec.target_words * 2.2) + 1500,
     )
-    return _to_blocks(data, transcript)
+    return _to_blocks(data, transcript, ctx.get("narrator", ""))
 
 
 # ----------------------------------------------------------------------- editor
@@ -409,7 +449,16 @@ def _section_text(w: Written) -> str:
 
 
 def _review_messages(plan: Plan, written: dict[tuple[int, int], Written], transcript, ctx):
-    system = """You are the fact-checking editor of a long-form book written from a podcast
+    name = ctx.get("narrator", "")
+    voice_rule = (
+        f'\nThe narration is in the first person as {name}: everything "I" said, asked, thought'
+        f" or did must come from {name}'s own lines. Report first-person memories, feelings,"
+        f" opinions or scenes {name} never voiced as off_topic, and another speaker's idea told"
+        ' as "I" as misattribution.'
+        if name
+        else ""
+    )
+    system = f"""You are the fact-checking editor of a long-form book written from a podcast
 conversation. Quotes in the draft have already been verified word for word; your job is the
 NARRATION around them. Compare every section with the transcript and report only real
 problems:
@@ -417,16 +466,17 @@ problems:
 - factual: numbers, names, dates, mechanisms or details that differ from what was said
 - overstatement: a claim stated more strongly or generally than the speaker made it
 - repetition: a point substantially repeated from an earlier section
-- housekeeping: sponsors, ads, links, "subscribe", intros/outros narrated as content
+- housekeeping: sponsors, ads, links, "subscribe", intros/outros narrated as content, or
+  narration about the source itself ("the transcript", "the excerpt", where it ends)
 - off_topic: content not in this section's transcript range, or invented material
-Do not report style preferences. Cite transcript evidence by segment number.
+Do not report style preferences. Cite transcript evidence by segment number.{voice_rule}
 
 Return ONLY JSON:
-{"summary": "one or two sentences on overall accuracy",
- "issues": [{"section": "3.2", "type": "misattribution|factual|overstatement|repetition|
+{{"summary": "one or two sentences on overall accuracy",
+ "issues": [{{"section": "3.2", "type": "misattribution|factual|overstatement|repetition|
    housekeeping|off_topic", "severity": "high|medium|low", "problem": "what is wrong",
    "evidence": "[segment numbers] and the words that show it", "fix": "what the corrected
-   text must say"}]}
+   text must say"}}]}}
 Use an empty list when the book is accurate."""
     parts = []
     for ci, ch in enumerate(plan.chapters):
@@ -457,7 +507,7 @@ def _rewrite_section(
     )
     sec = plan.chapters[ci].sections[si]
     data = _ask_json(msgs, max_tokens=int(sec.target_words * 2.2) + 1500)
-    return _to_blocks(data, transcript)
+    return _to_blocks(data, transcript, ctx.get("narrator", ""))
 
 
 def _words(w: Written) -> int:
@@ -556,7 +606,9 @@ def _fake_plan(transcript: Transcript, ctx: dict[str, str], chapters: int) -> Pl
     )
 
 
-def _fake_section(plan: Plan, ci: int, si: int, transcript: Transcript) -> Written:
+def _fake_section(
+    plan: Plan, ci: int, si: int, transcript: Transcript, narrator: str = ""
+) -> Written:
     sec = plan.chapters[ci].sections[si]
     blocks: list[Block] = []
     for i in range(sec.first, sec.last + 1):
@@ -565,8 +617,12 @@ def _fake_section(plan: Plan, ci: int, si: int, transcript: Transcript) -> Writt
         words = s.text.split()
         if len(words) < 6:
             continue
-        text = f"At {_ts(s.start)}, {name} picks up the thread: ⟦{' '.join(words[:10])}⟧."
-        runs, _ = resolve_runs(transcript, text)
+        quote = " ".join(words[:10])
+        if narrator and name == narrator:
+            text = f"At {_ts(s.start)}, I pick up the thread: as I put it, ⟦{quote}⟧."
+        else:
+            text = f"At {_ts(s.start)}, {name} picks up the thread: ⟦{quote}⟧."
+        runs, _ = resolve_runs(transcript, text, narrator)
         blocks.append(Paragraph(runs))
     return Written(blocks, quotes=len(blocks), rejected=0)
 
@@ -600,8 +656,8 @@ def _verified(transcript: Transcript, text: str, *, substantive: bool = False) -
     return q
 
 
-def main_speakers(transcript: Transcript, min_share: float = 0.05) -> list[str]:
-    """Display names of speakers with at least `min_share` of the talk time, in order of
+def main_labels(transcript: Transcript, min_share: float = 0.05) -> list[str]:
+    """Labels of speakers with at least `min_share` of the talk time, in order of
     appearance (diarization noise such as a two-word stray label is left out)."""
     talk: dict[str, float] = {}
     for seg in transcript.segments:
@@ -609,7 +665,45 @@ def main_speakers(transcript: Transcript, min_share: float = 0.05) -> list[str]:
     total = sum(talk.values()) or 1.0
     labels = [k for k in dict.fromkeys(s.speaker for s in transcript.segments)]
     keep = [k for k in labels if talk.get(k, 0) / total >= min_share] or labels[:1]
-    return [transcript.speakers.get(k, f"Speaker {k}") for k in keep][:4]
+    return keep[:4]
+
+
+def main_speakers(transcript: Transcript, min_share: float = 0.05) -> list[str]:
+    """Display names of the main speakers (see `main_labels`)."""
+    return [_name(transcript, k) for k in main_labels(transcript, min_share)]
+
+
+def _name(transcript: Transcript, label: str) -> str:
+    return transcript.speakers.get(label, f"Speaker {label}")
+
+
+def host_label(transcript: Transcript, podcast_title: str) -> str | None:
+    """Best guess at the host among the main speakers: the one named in the podcast's
+    title ("Huberman Lab"), otherwise the one who asks the most questions."""
+    labels = main_labels(transcript)
+    if not labels:
+        return None
+    title_words = set(re.findall(r"[a-z]+", podcast_title.lower()))
+    for label in labels:
+        name = _name(transcript, label)
+        if name.lower().startswith("speaker "):
+            continue
+        if any(len(w) > 2 and w in title_words for w in re.findall(r"[a-z]+", name.lower())):
+            return label
+    questions = {k: 0 for k in labels}
+    for seg in transcript.segments:
+        if seg.speaker in questions:
+            questions[seg.speaker] += seg.text.count("?")
+    return max(labels, key=lambda k: questions[k])
+
+
+def speaker_roles(transcript: Transcript, podcast_title: str) -> list[tuple[str, str, str]]:
+    """(label, display name, "host" | "guest") for each main speaker, host first."""
+    host = host_label(transcript, podcast_title)
+    roles = [
+        (k, _name(transcript, k), "host" if k == host else "guest") for k in main_labels(transcript)
+    ]
+    return sorted(roles, key=lambda r: r[2] != "host")
 
 
 def _cap_words(text: str, limit: int) -> str:
@@ -665,6 +759,7 @@ def _assemble(plan: Plan, written: dict[tuple[int, int], Written], transcript, c
         chapters=chapters,
         closing=_closing(chapters, _verified(transcript, plan.closing, substantive=True)),
         demo=ctx.get("demo") == "1",
+        narrator=ctx.get("narrator", ""),
     )
 
 
@@ -760,7 +855,11 @@ def build_book(book_id: int, on_progress: ProgressFn) -> None:
             "title": episode.title,
             "description": episode.description or "",
             "demo": "1" if podcast.rss_url.startswith("demo://") else "0",
+            "narrator": row.narrator or "",
         }
+    roles = speaker_roles(transcript, podcast.title)
+    ctx["speakers"] = "|".join(name for _, name, _ in roles)
+    ctx["narrator_role"] = next((r for _, n, r in roles if n == ctx["narrator"]), "host")
     if not transcript.segments:
         raise ValueError("The transcript is empty")
 
@@ -798,7 +897,7 @@ def build_book(book_id: int, on_progress: ProgressFn) -> None:
     try:
         if fake:
             for k in keys:
-                written[k] = _fake_section(plan, *k, transcript)
+                written[k] = _fake_section(plan, *k, transcript, ctx.get("narrator", ""))
         else:
             pending = {pool.submit(_write_section, plan, *k, transcript, ctx): k for k in keys}
             while pending:
@@ -877,7 +976,7 @@ def repair_book(book_id: int) -> BookRow:
     for ch in book.chapters:
         for b in ch.blocks:
             if isinstance(b, Paragraph):
-                b.runs = recover_hidden(transcript, b.runs)
+                b.runs = recover_hidden(transcript, b.runs, book.narrator)
                 quotes += sum(1 for r in b.runs if isinstance(r, Quote))
         if ch.opener and _is_housekeeping(ch.opener, duration):
             ch.opener = next((b.quote for b in ch.blocks if isinstance(b, PullQuote)), None)

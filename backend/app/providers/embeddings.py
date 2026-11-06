@@ -7,6 +7,7 @@ from typing import Any
 
 from openai import OpenAI
 
+from app import spend
 from app.providers.llm import is_transient_error
 
 _BATCH_SIZE = 256
@@ -44,6 +45,7 @@ class OpenAIEmbedder:
         for attempt in range(max_tries):
             try:
                 response = self._client.embeddings.create(model=self.model, input=batch)
+                spend.record(self.model, getattr(response, "usage", None))
                 ordered = sorted(
                     response.data,
                     key=lambda item: getattr(item, "index", 0),

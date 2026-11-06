@@ -66,8 +66,16 @@ class Settings(BaseSettings):
     job_concurrency: int = 2
     default_feeds: list[str] = ["https://feeds.megaphone.fm/hubermanlab"]
 
-    # --- Cost estimate (USD). Verify against current OpenAI pricing. ----
-    price_diarize_per_min: float = 0.006
+    # --- Prices (USD). Verify against current OpenAI pricing. -----------
+    # Estimates use the per-minute price until the app has measured a real
+    # transcription; then they use the measured rate (see services/estimate.py).
+    # gpt-4o-transcribe-diarize is billed by tokens. OpenAI's "$0.006/min" is far
+    # too low for diarized output: a measured 3-minute clip billed ~830 input and
+    # ~1,800 output tokens per minute (speaker labels and timestamps are tokens),
+    # i.e. ~$0.020/min, plus reference voice clips on every chunk after the first.
+    price_diarize_per_min: float = 0.021
+    price_diarize_input_per_mtok: float = 2.50
+    price_diarize_output_per_mtok: float = 10.00
     price_text_transcribe_per_min: float = 0.0045
     price_embedding_per_mtok: float = 0.02
     price_llm_input_per_mtok: float = 0.10

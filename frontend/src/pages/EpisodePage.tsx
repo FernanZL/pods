@@ -259,9 +259,14 @@ export function EpisodePage() {
     const ixDate = ext.indexed_at ?? findJobDate('index') ?? findJobDate('reindex')
     const sumDate = ext.summarized_at ?? findJobDate('summarize')
 
-    const items: Array<{ name: string; done: boolean; date: string | null }> = [
+    const items: Array<{ name: string; done: boolean; date: string | null; cost?: number | null }> = [
       { name: 'Downloaded', done: rank >= 1 || episode.local_audio, date: dlDate },
-      { name: 'Transcribed', done: rank >= 2 || episode.segments.length > 0, date: trDate },
+      {
+        name: 'Transcribed',
+        done: rank >= 2 || episode.segments.length > 0,
+        date: trDate,
+        cost: episode.transcribe_cost_usd,
+      },
       { name: 'Indexed', done: rank >= 3, date: ixDate },
     ]
     if (episode.has_summary) {
@@ -502,6 +507,11 @@ export function EpisodePage() {
               >
                 {st.name}
                 {st.date ? ` ${fmtDate(st.date)}` : st.done ? '' : ' (pending)'}
+                {st.cost != null ? (
+                  <span title="Measured from the usage OpenAI billed for this transcription">
+                    {` for ${fmtUsd(st.cost)}`}
+                  </span>
+                ) : null}
               </span>
             </span>
           ))}

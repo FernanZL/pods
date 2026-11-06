@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { Spinner } from './Spinner'
 import './ConfirmDialog.css'
 
@@ -11,6 +11,7 @@ interface ConfirmDialogProps {
   busy?: boolean
   onConfirm: () => void
   onClose: () => void
+  children?: ReactNode // extra controls between the description and the buttons
 }
 
 export function ConfirmDialog({
@@ -22,6 +23,7 @@ export function ConfirmDialog({
   busy = false,
   onConfirm,
   onClose,
+  children,
 }: ConfirmDialogProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null)
 
@@ -52,6 +54,7 @@ export function ConfirmDialog({
           {title}
         </h2>
         <p className="confirm-dialog-desc">{description}</p>
+        {children}
         <div className="confirm-dialog-footer">
           <button type="button" className="btn" onClick={onClose} disabled={busy}>
             Cancel

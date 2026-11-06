@@ -277,11 +277,11 @@ export function estimateBook(episodeId: number): Promise<BookEstimate> {
   })
 }
 
-export function createBook(episodeId: number): Promise<Book> {
+export function createBook(episodeId: number, narrator: string | null = null): Promise<Book> {
   return request<Book>('/books', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ episode_id: episodeId }),
+    body: JSON.stringify({ episode_id: episodeId, narrator }),
   })
 }
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import logging
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -17,6 +18,8 @@ from openai import (
     PermissionDeniedError,
     UnprocessableEntityError,
 )
+
+log = logging.getLogger(__name__)
 
 _MIME_BY_SUFFIX: dict[str, str] = {
     ".mp3": "audio/mpeg",
@@ -78,6 +81,13 @@ def with_retry[T](
             last_exc = exc
             if attempt + 1 >= tries:
                 raise
+            # A request that failed late (e.g. a timeout) may still have been billed.
+            log.warning(
+                "transcription request failed (%s); retrying (attempt %d of %d)",
+                exc,
+                attempt + 2,
+                tries,
+            )
             (sleep_fn or time.sleep)(base_delay * (2**attempt))
     assert last_exc is not None
     raise last_exc

@@ -88,6 +88,7 @@ export interface EpisodeDetail extends Episode {
   segments: Segment[]
   summary_markdown: string | null
   transcript_check: TranscriptCheck | null
+  transcribe_cost_usd: number | null // measured cost of the last transcription
 }
 
 export interface SelectionRequest {
@@ -109,6 +110,8 @@ export interface CostEstimate {
   llm_usd: number
   total_usd: number
   skipped_already_done: number
+  transcription_per_min: number // USD per audio minute used for the estimate
+  rate_measured: boolean // true: measured from this app's past transcriptions
 }
 
 export interface Job {
@@ -122,6 +125,7 @@ export interface Job {
   progress: number
   message: string
   error: string | null
+  cost_usd: number | null // measured API spend
   created_at: ISODate
   started_at: ISODate | null
   finished_at: ISODate | null
@@ -248,6 +252,8 @@ export interface Book {
   review_issues: number
   review_fixed: number
   review_summary: string
+  narrator: string // speaker telling it in the first person ('' = narrator)
+  cost_usd: number | null // measured API spend of the writing job
   error: string | null
   created_at: ISODate
   updated_at: ISODate
@@ -261,4 +267,11 @@ export interface BookEstimate {
   est_pages: number
   llm_usd: number
   model: string
+  voices: BookVoice[] // speakers who can tell the book, host first
+}
+
+export interface BookVoice {
+  label: string
+  name: string
+  role: 'host' | 'guest'
 }

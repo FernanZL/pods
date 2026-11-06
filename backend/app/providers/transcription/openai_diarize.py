@@ -7,6 +7,7 @@ from typing import Any
 
 from openai import OpenAI
 
+from app import spend
 from app.domain import KnownSpeaker, Segment, TranscriptionContext
 from app.providers.transcription.base import encode_audio_data_url, get_field, with_retry
 
@@ -57,6 +58,7 @@ class OpenAIDiarizeTranscriber:
                 return self._client.audio.transcriptions.create(file=audio_file, **kwargs)
 
         resp = with_retry(_call)
+        spend.record(self.name, get_field(resp, "usage"))
         raw_segments = get_field(resp, "segments", []) or []
 
         segments: list[Segment] = []

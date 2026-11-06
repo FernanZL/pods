@@ -15,7 +15,7 @@ from app.config import get_settings
 from app.db import get_session
 from app.jobs.worker import worker
 from app.models import Book, Episode, Job, Podcast, utcnow
-from app.schemas import BookCreate, BookEstimate, BookOut
+from app.schemas import BookCreate, BookEstimate, BookOut, BookVoice
 
 router = APIRouter()
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -54,6 +54,8 @@ def _out(session: Session, book: Book) -> BookOut:
         review_issues=book.review_issues or 0,
         review_fixed=book.review_fixed or 0,
         review_summary=book.review_summary or "",
+        narrator=book.narrator or "",
+        cost_usd=job.cost_usd if job else None,
         error=book.error,
         created_at=book.created_at,
         updated_at=book.updated_at,
@@ -76,6 +78,18 @@ def _transcribed_episode(session: Session, episode_id: int) -> Episode:
     return episode
 
 
+def _voices(session: Session, episode: Episode) -> list[BookVoice]:
+    assert episode.transcript_path
+    transcript = storage.read_transcript(storage.to_abs(episode.transcript_path))
+    podcast = session.get(Podcast, episode.podcast_id)
+    roles = pipeline.speaker_roles(transcript, podcast.title if podcast else "")
+    return [
+        BookVoice(label=label, name=name, role=role)  # type: ignore[arg-type]
+        for label, name, role in roles
+        if not name.lower().startswith("speaker ")  # unnamed voices cannot narrate
+    ]
+
+
 @router.post("/books/estimate", response_model=BookEstimate)
 def estimate(body: BookCreate, session: SessionDep) -> BookEstimate:
     episode = _transcribed_episode(session, body.episode_id)
@@ -91,16 +105,32 @@ def estimate(body: BookCreate, session: SessionDep) -> BookEstimate:
         est_pages=max(8, round(target / 330) + chapters + 4),
         llm_usd=0.0 if settings.llm_provider == "fake" else usd,
         model=settings.llm_model if settings.llm_provider != "fake" else "fake",
+        voices=_voices(session, episode),
     )
 
 
 @router.post("/books", response_model=BookOut, status_code=201)
 def create_book(body: BookCreate, session: SessionDep) -> BookOut:
     episode = _transcribed_episode(session, body.episode_id)
+    narrator = ""
+    if body.narrator:
+        # a speaker label, or a display name (a retry passes the failed book's narrator)
+        voice = next(
+            (v for v in _voices(session, episode) if body.narrator in (v.label, v.name)), None
+        )
+        if voice is None:
+            raise HTTPException(status_code=422, detail="That speaker cannot narrate this book")
+        narrator = voice.name
     job = Job(kind="book", episode_id=episode.id, status="queued", message="Queued")
     session.add(job)
     session.commit()
-    book = Book(episode_id=body.episode_id, job_id=job.id, seed=new_seed(), title=episode.title)
+    book = Book(
+        episode_id=body.episode_id,
+        job_id=job.id,
+        seed=new_seed(),
+        title=episode.title,
+        narrator=narrator,
+    )
     session.add(book)
     session.commit()
     session.refresh(book)

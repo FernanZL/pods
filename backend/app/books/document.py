@@ -84,6 +84,7 @@ class Book:
     chapters: list[Chapter]
     closing: Quote | None
     demo: bool = False  # fictional demo content flag (printed on cover/colophon)
+    narrator: str = ""  # speaker whose first-person voice tells the book ("" = narrator)
 
 
 # --- (de)serialisation: book.json holds the written text, independent of design ---
@@ -149,6 +150,7 @@ def book_to_dict(book: Book) -> dict:
         "duration": book.duration,
         "closing": _q(book.closing),
         "demo": book.demo,
+        "narrator": book.narrator,
         "chapters": [
             {
                 "label": c.label,
@@ -176,6 +178,7 @@ def book_from_dict(d: dict) -> Book:
         duration=float(d["duration"]),
         closing=_uq(d.get("closing")),
         demo=bool(d.get("demo", False)),
+        narrator=str(d.get("narrator") or ""),
         chapters=[
             Chapter(
                 label=c["label"],

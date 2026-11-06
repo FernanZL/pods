@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import re
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -78,7 +79,9 @@ class _Notes:
         self.quotes: dict[tuple[str, float], Quote] = {}
 
     def add(self, q: Quote) -> Quote:
-        self.quotes[(q.text, q.start)] = q
+        # the same line quoted twice may differ only in case or trailing punctuation
+        key = (" ".join(re.findall(r"[\w']+", q.text.lower())), q.start)
+        self.quotes.setdefault(key, q)
         return q
 
 
@@ -228,11 +231,19 @@ def _contents(book: Book) -> str:
             f"{_e(ch.title)}</a><small>{_e(ch.dek)}</small>{sec_html}</span>"
             f'<span class="p"><a href="#ch{i + 1}"></a></span></li>'
         )
+    if book.narrator:
+        who = _e(book.narrator)
+        voice = (
+            f"The narrative is written fresh by AI in {who}&rsquo;s voice, in the first person, "
+            f"from what was said in the episode; {who} did not write or review it. Words in "
+        )
+    else:
+        voice = "The narrative is written fresh; words in "
     return (
         '<section class="contents"><h2>Contents</h2><ol class="toc">'
         + "".join(rows)
         + '</ol><div class="made"><b>How this book was made.</b> Pods transcribed the episode by '
-        "voice, so every line knows who said it and when. The narrative is written fresh; words in "
+        f"voice, so every line knows who said it and when. {voice}"
         "quotation marks are the speakers' own, checked word for word against the recording and "
         "footnoted with their timestamp.</div></section>"
     )
@@ -252,6 +263,9 @@ def _closing(book: Book, notes: _Notes) -> str:
         for q in sorted(notes.quotes.values(), key=lambda q: q.start)
     )
     demo = " The episode and its speakers are fictional demo content." if book.demo else ""
+    if book.narrator:
+        who = _e(book.narrator)
+        demo += f" Told in {who}&rsquo;s voice by AI; not written or endorsed by {who}."
     return (
         f'<section class="closing">{big}<div class="sources">'
         f"<h3>Every quote, and where it was said</h3><table>{rows}</table></div>"

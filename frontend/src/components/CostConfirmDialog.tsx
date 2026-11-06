@@ -174,6 +174,15 @@ export function CostConfirmDialog({
               </div>
             </dl>
 
+            {!config?.fake_mode && estimate.transcription_usd > 0 ? (
+              <p className="cost-note">
+                Transcription at {fmtUsd(estimate.transcription_per_min)}/min,{' '}
+                {estimate.rate_measured
+                  ? 'the average OpenAI actually billed for your past transcriptions.'
+                  : 'from measured token usage. It is refined from what OpenAI actually bills after your first transcription.'}
+              </p>
+            ) : null}
+
             {config ? (
               <div className="cost-models">
                 <span className="cost-models-item">

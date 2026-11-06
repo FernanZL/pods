@@ -353,7 +353,8 @@ export function useEstimateBook() {
 export function useCreateBook() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (episodeId: number) => createBook(episodeId),
+    mutationFn: ({ episodeId, narrator }: { episodeId: number; narrator: string | null }) =>
+      createBook(episodeId, narrator),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.books })
       void qc.invalidateQueries({ queryKey: queryKeys.jobsAll })

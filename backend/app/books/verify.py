@@ -113,6 +113,11 @@ def _make_quote(transcript: Transcript, idx: _Index, lo: int, hi: int, text: str
     return Quote(text=text.strip().strip('"“”'), speaker=name, start=start)
 
 
+def _speaker_at(transcript: Transcript, idx: _Index, pos: int) -> str:
+    label = transcript.segments[idx.seg_of[pos]].speaker
+    return transcript.speakers.get(label, f"Speaker {label}")
+
+
 def _exact(idx: _Index, needle: list[str]) -> int | None:
     n = len(needle)
     for pos in idx.first_tok.get(needle[0], []):
@@ -200,11 +205,14 @@ def _merge(runs: list[str | Quote]) -> list[str | Quote]:
     return merged
 
 
-def resolve_runs(transcript: Transcript, text: str) -> tuple[list[str | Quote], list[str]]:
+def resolve_runs(
+    transcript: Transcript, text: str, own: str = ""
+) -> tuple[list[str | Quote], list[str]]:
     """Split writer text into runs, turning each ⟦marked quote⟧ into a verified Quote.
 
     A marked passage that cannot be verified stays as plain text; `recover_hidden`
     then re-quotes any stretch of it that is still the speaker's own words.
+    `own` is the first-person narrator's name: their own words are left as narration.
     Returns (runs, rejected).
     """
     runs: list[str | Quote] = []
@@ -221,23 +229,29 @@ def resolve_runs(transcript: Transcript, text: str) -> tuple[list[str | Quote], 
         pos = m.end()
     if pos < len(text):
         runs.append(text[pos:])
-    return recover_hidden(transcript, _merge(runs)), rejected
+    return recover_hidden(transcript, _merge(runs), own), rejected
 
 
-def recover_hidden(transcript: Transcript, runs: list[str | Quote]) -> list[str | Quote]:
+def recover_hidden(
+    transcript: Transcript, runs: list[str | Quote], own: str = ""
+) -> list[str | Quote]:
     """Turn unquoted stretches of >= HIDDEN_MIN_WORDS transcript words into cited quotes,
-    so a speaker's words never read as the narrator's."""
+    so a speaker's words never read as the narrator's. In a first-person book, `own`
+    (the narrator's name) is skipped: the narrator retelling their own words is not
+    hidden speech, and quoting it would split their sentences."""
     idx = _index(transcript)
     out: list[str | Quote] = []
     for run in runs:
         if not isinstance(run, str):
             out.append(run)
             continue
-        out.extend(_split_hidden(transcript, idx, run))
+        out.extend(_split_hidden(transcript, idx, run, own))
     return _merge(out)
 
 
-def _split_hidden(transcript: Transcript, idx: _Index, text: str) -> list[str | Quote]:
+def _split_hidden(
+    transcript: Transcript, idx: _Index, text: str, own: str = ""
+) -> list[str | Quote]:
     spans = [(m.start(), m.end(), _norm_token(m.group())) for m in re.finditer(r"\S+", text)]
     spans = [s for s in spans if s[2]]
     toks = [s[2] for s in spans]
@@ -254,6 +268,9 @@ def _split_hidden(transcript: Transcript, idx: _Index, text: str) -> list[str | 
                 k += 1
             if k > best_len:
                 best_len, best_pos = k, pos
+        if best_len >= HIDDEN_MIN_WORDS and own and _speaker_at(transcript, idx, best_pos) == own:
+            i += best_len  # the first-person narrator retelling their own words
+            continue
         if best_len >= HIDDEN_MIN_WORDS:
             # first person just past the match counts too ("...each movement of my hand")
             window = set(toks[i : i + best_len + 3])
