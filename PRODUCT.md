@@ -35,7 +35,7 @@ Answers come from the owner's own locally stored, speaker-attributed transcripts
 None established. The app is not affiliated with Huberman Lab or any podcast; it must not use podcast logos or branding as its own identity.
 
 ## Evidence on Hand
-- `example_of_usage.png` — screenshot of the old Gradio chatbot (anti-reference for the new UI, not a brand asset).
+- The old Gradio chatbot screenshot (`example_of_usage.png`, removed from the repo, still in git history) is an anti-reference for the UI, not a brand asset. Current screenshots live in `docs/screenshots/`.
 - No real transcripts, testimonials or metrics exist yet; demo content must be clearly fictional and never attribute invented quotes to real people.
 
 ## Product Principles
