@@ -270,6 +270,17 @@ export interface BookEstimate {
   voices: BookVoice[] // speakers who can tell the book, host first
 }
 
+/** GET /api/books/quote: a verified line from a finished book (the home page's staff pick). */
+export interface BookQuote {
+  text: string
+  speaker: string
+  start: number
+  episode_id: number
+  episode_number: number
+  book_id: number
+  book_title: string
+}
+
 export interface BookVoice {
   label: string
   name: string

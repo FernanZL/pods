@@ -1,6 +1,8 @@
 """Long-form PDF books written from episodes."""
 
+import json
 import shutil
+from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response
@@ -15,7 +17,7 @@ from app.config import get_settings
 from app.db import get_session
 from app.jobs.worker import worker
 from app.models import Book, Episode, Job, Podcast, utcnow
-from app.schemas import BookCreate, BookEstimate, BookOut, BookVoice
+from app.schemas import BookCreate, BookEstimate, BookOut, BookQuote, BookVoice
 
 router = APIRouter()
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -143,6 +145,42 @@ def create_book(body: BookCreate, session: SessionDep) -> BookOut:
 def list_books(session: SessionDep) -> list[BookOut]:
     books = session.exec(select(Book).order_by(col(Book.created_at).desc())).all()
     return [_out(session, b) for b in books]
+
+
+@router.get("/books/quote", response_model=BookQuote | None)
+def book_quote(session: SessionDep) -> BookQuote | None:
+    """One verified pull quote from the finished books, the same all day."""
+    rows = session.exec(select(Book).where(Book.status == "ready").order_by(col(Book.id))).all()
+    picks: list[BookQuote] = []
+    for book in rows:
+        if not book.dir_path or book.id is None:
+            continue
+        path = storage.to_abs(book.dir_path) / "book.json"
+        episode = session.get(Episode, book.episode_id)
+        if episode is None or episode.id is None or not path.is_file():
+            continue
+        try:
+            data = json.loads(path.read_text("utf-8"))
+        except (OSError, ValueError):
+            continue
+        for chapter in data.get("chapters") or []:
+            for block in chapter.get("blocks") or []:
+                q = block.get("quote") if block.get("t") == "pull" else None
+                if q and 3 <= len(str(q.get("text", "")).split()) <= 16:
+                    picks.append(
+                        BookQuote(
+                            text=q["text"],
+                            speaker=q["speaker"],
+                            start=float(q["start"]),
+                            episode_id=episode.id,
+                            episode_number=episode.number,
+                            book_id=book.id,
+                            book_title=book.title,
+                        )
+                    )
+    if not picks:
+        return None
+    return picks[date.today().toordinal() % len(picks)]
 
 
 @router.get("/books/{book_id}", response_model=BookOut)

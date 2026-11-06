@@ -26,8 +26,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import httpx
-
 from app import db, storage
 from app.books.document import (
     Block,
@@ -51,6 +49,7 @@ from app.domain import ChatMessage, ProgressFn, Transcript
 from app.models import Book as BookRow
 from app.models import Episode, Podcast, utcnow
 from app.providers import get_llm
+from app.services.artwork import artwork_path
 
 log = logging.getLogger(__name__)
 
@@ -772,25 +771,6 @@ def _book_dir(book_row: BookRow, podcast: Podcast, episode: Episode) -> Path:
     return d
 
 
-def _artwork(podcast: Podcast) -> Path | None:
-    """The podcast's artwork, downloaded once next to its episodes."""
-    s = get_settings()
-    if not podcast.image_url or s.download_mode == "fake":
-        return None
-    dst = s.podcasts_dir / podcast.slug / "artwork.img"
-    if dst.is_file():
-        return dst
-    try:
-        resp = httpx.get(podcast.image_url, timeout=30, follow_redirects=True)
-        resp.raise_for_status()
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        dst.write_bytes(resp.content)
-        return dst
-    except httpx.HTTPError:
-        log.warning("book: could not download artwork for %s", podcast.title)
-        return None
-
-
 def render_book(book_id: int) -> BookRow:
     """(Re)render a written book with its current seed. No model calls."""
     with db.session_scope() as session:
@@ -806,7 +786,8 @@ def render_book(book_id: int) -> BookRow:
         transcript = storage.read_transcript(storage.to_abs(episode.transcript_path))
     book = book_from_dict(json.loads((bdir / "book.json").read_text("utf-8")))
     theme = make_theme(seed)
-    pdf = render_pdf(book, transcript.segments, theme, bdir / "book.pdf", artwork=_artwork(podcast))
+    art = artwork_path(podcast)
+    pdf = render_pdf(book, transcript.segments, theme, bdir / "book.pdf", artwork=art)
     pages = _thumbnail(pdf, bdir / "cover.png")
     with db.session_scope() as session:
         row = session.get(BookRow, book_id)

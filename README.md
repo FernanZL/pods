@@ -41,6 +41,8 @@ open http://localhost:8080
 4. Follow progress in **Jobs**. Each episode becomes chat-ready as soon as it is indexed.
 5. **Chat**: ask anything. Narrow the scope to one podcast or chosen episodes. Click a citation to jump to that moment in the episode.
 
+The **home page** is your library as a record shop: transcribed episodes are sleeves in a crate (each sleeve's art is the whole conversation drawn as a record groove, coloured by speaker; flip with the arrows or arrow keys), episodes not yet transcribed are sealed sleeves, and each podcast is a hand-lettered divider card. The wall carries the shows' artwork as duotone posters (made locally from the feed artwork, no AI calls; a typographic poster when a show has none) and a daily "staff pick", a verified quote from one of your books. The counter on the right shows your newest books, the ask field, your last chat and any running job.
+
 `./data` is a bind mount, so it survives `docker compose down` and rebuilds. The backend runs as whoever owns `./data` on the host, so those files stay yours.
 
 ## Local development

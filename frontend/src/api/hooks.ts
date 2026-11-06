@@ -13,6 +13,7 @@ import {
   deleteBook,
   estimateBook,
   getBooks,
+  getBookQuote,
   reshuffleBook,
   clearFinishedJobs,
   deleteJob,
@@ -55,6 +56,7 @@ export const queryKeys = {
   episodeAll: ['episode'] as const,
   episodeCitations: (id: number) => ['episodeCitations', id] as const,
   books: ['books'] as const,
+  bookQuote: ['bookQuote'] as const,
   discoverGenres: ['discoverGenres'] as const,
   discoverSearch: (q: string) => ['discoverSearch', q] as const,
   discoverTop: (genreId: number | null) => ['discoverTop', genreId] as const,
@@ -335,6 +337,11 @@ export function useCheckEpisode() {
 }
 
 /** Books, polling every 2 s while any is being written. */
+/** Today's staff pick: one verified quote from the finished books. */
+export function useBookQuote() {
+  return useQuery({ queryKey: queryKeys.bookQuote, queryFn: getBookQuote, staleTime: 3_600_000 })
+}
+
 export function useBooks() {
   return useQuery({
     queryKey: queryKeys.books,

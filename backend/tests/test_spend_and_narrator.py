@@ -183,3 +183,54 @@ def test_first_person_narrator_words_are_not_turned_into_quotes() -> None:
     assert speakers(mine) == ["Host"] and speakers(theirs) == ["Guest"]
     # told by the host: their own words stay narration, the guest's are still quoted
     assert speakers(mine, own="Host") == [] and speakers(theirs, own="Host") == ["Guest"]
+
+
+# ------------------------------------------------------------------------ home page
+
+
+def test_podcast_poster_is_a_cached_duotone_and_404_without_artwork(
+    client, session, settings, monkeypatch
+) -> None:
+    from PIL import Image
+
+    from app.models import Podcast
+
+    pod = Podcast(
+        title="Show", rss_url="https://x.test/feed", slug="show", image_url="https://x.test/a.jpg"
+    )
+    bare = Podcast(title="Bare", rss_url="https://x.test/bare", slug="bare")
+    session.add_all([pod, bare])
+    session.commit()
+    monkeypatch.setattr(settings, "download_mode", "real")
+    art = settings.podcasts_dir / "show" / "artwork.img"
+    art.parent.mkdir(parents=True, exist_ok=True)
+    Image.new("RGB", (60, 40), (200, 30, 30)).save(art, "JPEG")  # already on disk: no network
+
+    first = client.get(f"/api/podcasts/{pod.id}/poster.png")
+    assert first.status_code == 200 and first.headers["content-type"] == "image/png"
+    cached = list(art.parent.glob("poster-*.png"))
+    assert len(cached) == 1
+    assert Image.open(cached[0]).size == (480, 480)
+    assert client.get(f"/api/podcasts/{pod.id}/poster.png").content == first.content
+    assert client.get(f"/api/podcasts/{bare.id}/poster.png").status_code == 404
+
+
+def test_book_quote_comes_from_a_ready_book(client, session) -> None:
+    assert client.get("/api/books/quote").json() is None
+    ep_id = _episode(session)
+    created = client.post("/api/books", json={"episode_id": ep_id}).json()
+    _wait_ready(client, created["id"])
+    row = session.get(Book, created["id"])
+    assert row is not None and row.dir_path
+    path = storage.to_abs(row.dir_path) / "book.json"
+    data = json.loads(path.read_text())
+    data["chapters"][0]["blocks"].append(
+        {
+            "t": "pull",
+            "quote": {"text": "Morning light sets the clock", "speaker": "Guest", "start": 90.0},
+        }
+    )
+    path.write_text(json.dumps(data))
+    quote = client.get("/api/books/quote").json()
+    assert quote["text"] == "Morning light sets the clock" and quote["speaker"] == "Guest"
+    assert quote["episode_id"] == ep_id and quote["episode_number"] == 7

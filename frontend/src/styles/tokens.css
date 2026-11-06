@@ -1,4 +1,4 @@
-/* Design tokens — Reference Apparatus (indigo shell, magenta citations).
+/* Design tokens — Reference Apparatus (slate shell, marigold rule, magenta citations).
    CONTRACT FILE: components consume these variables; do not hard-code colours. */
 @import '@fontsource-variable/source-sans-3';
 @import '@fontsource-variable/source-serif-4';
@@ -42,21 +42,22 @@
   --dur: 220ms;
 
   /* ---- light palette ---- */
-  --shell: #261a57;          /* rail */
-  --shell-ink: #f1edff;      /* rail text, active */
-  --shell-ink-muted: #b3a9dc;
-  --shell-line: #3a2d74;
-  --ground: #f8f7fc;         /* page */
+  --shell: #1d2638;          /* top bar: deep slate */
+  --shell-ink: #eef1f7;      /* top bar text, active */
+  --shell-ink-muted: #a9b3c9;
+  --shell-line: #2d3850;
+  --marigold: #f4b33e;       /* the active-section rule; the home page's divider cards */
+  --ground: #f4f5f8;         /* page */
   --surface: #ffffff;        /* panels, inputs, references column */
-  --surface-sunk: #efedf6;   /* conversation list, table header */
-  --ink: #17142a;
-  --ink-muted: #57527a;      /* secondary text (≥ 4.5:1 on ground) */
-  --ink-faint: #6e6890;      /* placeholders, meta (≥ 4.5:1 on surface) */
-  --line: #dcd8ea;
-  --line-strong: #c3bddb;
-  --accent: #3a2a85;         /* primary buttons, links */
+  --surface-sunk: #eceef3;   /* conversation list, table header */
+  --ink: #141821;
+  --ink-muted: #525a6b;      /* secondary text (≥ 4.5:1 on ground) */
+  --ink-faint: #656d80;      /* placeholders, meta (≥ 4.5:1 on surface) */
+  --line: #d9dde6;
+  --line-strong: #bfc5d2;
+  --accent: #36435f;         /* primary buttons, links: slate */
   --accent-ink: #ffffff;
-  --accent-hover: #2d1f6e;
+  --accent-hover: #2a354d;
 
   /* citations — the signature */
   --cite-bg: #f6ddec;        /* resting marker chip */
@@ -72,42 +73,42 @@
   --speaker-3: #7a4fd0;
   --speaker-4: #1f8fb0;
   --speaker-other: #8a84a8;
-  /* speakers drawn on the indigo shell (home tapes); same in both themes */
-  --tape-s0: #7fa2ff;
-  --tape-s1: #e57cc4;
-  --tape-s2: #a98bf0;
-  --tape-s3: #5cc3e0;
+  /* speakers drawn on the dark slate (record grooves, book placeholders); same in both themes */
+  --tape-s0: #f4b33e;
+  --tape-s1: #f3f2ee;
+  --tape-s2: #ff8a7a;
+  --tape-s3: #8fb3e8;
 
   /* states (stamps) */
-  /* states stay inside the indigo / blue / violet / magenta family; red only for failure */
-  --state-new: #57527a;
+  /* states stay inside the slate / blue / violet family; red only for failure */
+  --state-new: #525a6b;
   --state-progress: #3d6be0;
-  --state-done: #5b3fc4;
+  --state-done: #4a4fb0;
   --state-failed: #c0263d;
-  --state-cancelled: #6e6890;
+  --state-cancelled: #656d80;
   --state-warn: #2f3f9e;      /* indigo-blue: magenta stays reserved for the live citation */
 
   --focus-ring: 0 0 0 2px var(--ground), 0 0 0 4px var(--cite-live);
-  --selection: #e3defa;
+  --selection: #dfe4ee;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --shell: #1a1338;
-    --shell-ink: #f1edff;
-    --shell-ink-muted: #9d93c9;
-    --shell-line: #2c2257;
-    --ground: #13111c;
-    --surface: #1c1929;
-    --surface-sunk: #171424;
-    --ink: #ece9f7;
-    --ink-muted: #b2abd0;
-    --ink-faint: #9a93bb;
-    --line: #2e2a44;
-    --line-strong: #423c60;
-    --accent: #a993ff;
-    --accent-ink: #160f33;
-    --accent-hover: #c0afff;
+    --shell: #121826;
+    --shell-ink: #eef1f7;
+    --shell-ink-muted: #98a3bb;
+    --shell-line: #232c40;
+    --ground: #10131a;
+    --surface: #181c26;
+    --surface-sunk: #141821;
+    --ink: #e8ebf2;
+    --ink-muted: #aab2c3;
+    --ink-faint: #8f98ab;
+    --line: #262c3a;
+    --line-strong: #3a4256;
+    --accent: #a9bce2;
+    --accent-ink: #10131a;
+    --accent-hover: #c3d2ef;
 
     --cite-bg: #4a1f3c;
     --cite-ink: #ffd3ec;
@@ -119,16 +120,16 @@
     --speaker-2: #e57cc4;
     --speaker-3: #a98bf0;
     --speaker-4: #5cc3e0;
-    --speaker-other: #8f88b0;
+    --speaker-other: #8f98ab;
 
-    --state-new: #9a93bb;
+    --state-new: #8f98ab;
     --state-progress: #7fa2ff;
-    --state-done: #b6a2ff;
+    --state-done: #aab0f2;
     --state-failed: #ff7a8c;
-    --state-cancelled: #8f88b0;
+    --state-cancelled: #8f98ab;
     --state-warn: #9fb0ff;
 
-    --selection: #3a2d74;
+    --selection: #2d3850;
   }
 }
 

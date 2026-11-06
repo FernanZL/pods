@@ -95,6 +95,8 @@ Backends (`providers/transcription/`):
 | GET `/discover/search` | `q, limit=20` | `DiscoverPodcast[]` via the Apple Podcasts directory (no key); 502 if unreachable | discover |
 | GET `/discover/top` | `genre_id?, limit=24` | `DiscoverPodcast[]` top chart resolved to feed URLs (cached 1 h) | discover |
 | GET `/discover/genres` | | `DiscoverGenre[]` | discover |
+| GET `/podcasts/{id}/poster.png` | | the show's artwork as a 480px slate/marigold duotone (`services/artwork.py`, cached next to `artwork.img`); 404 without artwork | home |
+| GET `/books/quote` | | `BookQuote` or null: a verified pull quote from a ready book, rotating daily (the home page's staff pick) | home |
 | POST `/books/estimate` | `{episode_id}` | `BookEstimate` (chapters, target words, pages, USD, `voices`: speakers who can tell it, host first) | books |
 | POST `/books` | `{episode_id, narrator?}` | `BookOut` (201); queues a `book` job; 409 without a transcript; 422 if `narrator` (a voice's label or name) is not a main named speaker | books |
 | GET `/books`, GET `/books/{id}` | | `BookOut[]` / `BookOut` (status, live progress) | books |
@@ -129,7 +131,7 @@ The frontend reads the stream with `fetch` + `ReadableStream`, because EventSour
 
 ## Frontend routes
 All pages share one indigo top bar (Pods wordmark, Chat / Library / Jobs, and a page slot on the right).
-- `/`: Home. Indigo hero with "Ask your podcasts." and an ask box (submits to `/chat?q=`), over drifting speaker tapes drawn from the most recently indexed episodes. Below: continue a conversation, recently indexed, grow the library.
+- `/`: Home, the library as a record shop. Wall: headline and library counts, duotone posters per show, the staff-pick quote, and a crate of sleeves (newest transcribed episodes as record-groove sleeves drawn from their segments, then sealed sleeves for untranscribed ones; arrow buttons/keys flip, divider tabs jump to a show). Counter: newest ready books (covers), the ask field (submits to `/chat?q=`), the last chat, and the running job if any.
 - `/chat`, `/chat/:conversationId`: Chat. The Conversations menu sits in the top-bar slot; answers have the References column beside them. `?q=` sends a question on arrival. Old `/c/:id` links redirect.
 - `/library`: "Your library" tab (feeds and the episode table, process with cost confirm) and a "Browse podcasts" tab (`?tab=browse`): name search and genre top charts from the Apple directory, one-click Add, RSS URL fallback.
 - `/episodes/:id`: player, diarized transcript, cited-passage margin. `?t=` seeks and scrolls.

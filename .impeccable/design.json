@@ -1,480 +1,864 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-05T16:24:12+00:00",
+  "generatedAt": "2026-11-06T16:18:27.903471+00:00",
   "title": "Design System: Pods",
   "extensions": {
     "colorMeta": {
-      "indigo-shell": {
+      "slate-shell": {
         "role": "primary",
-        "displayName": "Deep Indigo Shell",
-        "canonical": "oklch(27.4% 0.105 286.3)",
+        "displayName": "Deep Slate Shell",
+        "canonical": "#1d2638",
         "tonalRamp": [
-          "#0a061f",
-          "#231f43",
-          "#3f3a6b",
-          "#5d5896",
-          "#7e79ba",
-          "#a09ed6",
-          "#c5c3f3",
-          "#edecff"
+          "#080b12",
+          "#1f242f",
+          "#38404f",
+          "#545e71",
+          "#768095",
+          "#9ca5b7",
+          "#c3cbd9",
+          "#e9effa"
         ],
-        "darkValue": "#1a1338"
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#121826"
       },
       "shell-ink": {
         "role": "primary",
-        "displayName": "Shell Lavender",
-        "canonical": "oklch(95.4% 0.024 296.1)",
+        "displayName": "Shell Frost",
+        "canonical": "#eef1f7",
         "tonalRamp": [
-          "#0c0a10",
-          "#26242c",
-          "#43404b",
-          "#625f6d",
-          "#83808f",
-          "#a6a3b0",
-          "#cac7d2",
-          "#efedf6"
+          "#0a0b0d",
+          "#232427",
+          "#3e4043",
+          "#5b5e62",
+          "#7e8085",
+          "#a2a5a9",
+          "#c9cace",
+          "#edeef1"
         ],
-        "darkValue": "#f1edff"
+        "source": "frontend/src/styles/tokens.css"
       },
       "shell-ink-muted": {
         "role": "primary",
-        "displayName": "Muted Shell Lavender",
-        "canonical": "oklch(76.1% 0.073 293.6)",
+        "displayName": "Muted Shell Frost",
+        "canonical": "#a9b3c9",
         "tonalRamp": [
-          "#0c0819",
-          "#262039",
-          "#433c5e",
-          "#635a84",
-          "#847ba8",
-          "#a69fc6",
-          "#cac4e5",
-          "#efecfe"
+          "#080b12",
+          "#1f242e",
+          "#39404d",
+          "#565e6f",
+          "#778093",
+          "#9da5b5",
+          "#c4cbd8",
+          "#eaeef9"
         ],
-        "darkValue": "#9d93c9"
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#98a3bb"
       },
       "shell-line": {
         "role": "primary",
         "displayName": "Shell Seam",
-        "canonical": "oklch(35.4% 0.117 287.3)",
+        "canonical": "#2d3850",
         "tonalRamp": [
-          "#0b0521",
-          "#241d47",
-          "#40396f",
-          "#5e569b",
-          "#7f77c0",
-          "#a19cdc",
-          "#c5c2f8",
-          "#edecfe"
+          "#070b14",
+          "#1e2431",
+          "#374052",
+          "#525e75",
+          "#74809a",
+          "#9aa5bb",
+          "#c2cbdd",
+          "#e8effd"
         ],
-        "darkValue": "#2c2257"
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#232c40"
       },
-      "accent": {
-        "role": "primary",
-        "displayName": "Ink Indigo",
-        "canonical": "oklch(36.3% 0.145 284.6)",
-        "tonalRamp": [
-          "#0a0327",
-          "#221b4f",
-          "#3d367b",
-          "#5b53a9",
-          "#7b75cf",
-          "#9d9be9",
-          "#c3c3fc",
-          "#ecedff"
-        ],
-        "darkValue": "#a993ff"
-      },
-      "accent-hover": {
-        "role": "primary",
-        "displayName": "Ink Indigo Deep",
-        "canonical": "oklch(31.2% 0.129 284.1)",
-        "tonalRamp": [
-          "#0a0524",
-          "#221d4b",
-          "#3d3875",
-          "#5a55a2",
-          "#7a77c7",
-          "#9d9ce2",
-          "#c2c3fe",
-          "#ecedfe"
-        ],
-        "darkValue": "#c0afff"
-      },
-      "cite-live": {
+      "marigold": {
         "role": "secondary",
-        "displayName": "Citation Magenta",
-        "canonical": "oklch(53.4% 0.193 351.1)",
+        "displayName": "Marigold",
+        "canonical": "#f4b33e",
         "tonalRamp": [
-          "#1c000e",
-          "#47022b",
-          "#77084b",
-          "#a5226d",
-          "#cd4a8f",
-          "#ea7ab0",
-          "#ffadd1",
-          "#fee7f1"
+          "#120900",
+          "#322000",
+          "#553a06",
+          "#7b560c",
+          "#a6761b",
+          "#cb9b4b",
+          "#ebc487",
+          "#feecd1"
         ],
-        "darkValue": "#f06bb2"
-      },
-      "cite-bg": {
-        "role": "secondary",
-        "displayName": "Citation Blush",
-        "canonical": "oklch(92.2% 0.034 341.0)",
-        "tonalRamp": [
-          "#10080d",
-          "#2c2128",
-          "#4c3d46",
-          "#6e5a67",
-          "#907b88",
-          "#b19faa",
-          "#d4c4cd",
-          "#f7eaf2"
-        ],
-        "darkValue": "#4a1f3c"
-      },
-      "cite-ink": {
-        "role": "secondary",
-        "displayName": "Citation Plum",
-        "canonical": "oklch(37.2% 0.122 347.5)",
-        "tonalRamp": [
-          "#1b0110",
-          "#3e122c",
-          "#652a4b",
-          "#8e446d",
-          "#b3658f",
-          "#d28cb0",
-          "#f0b5d2",
-          "#fee7f2"
-        ],
-        "darkValue": "#ffd3ec"
-      },
-      "cite-live-tint": {
-        "role": "secondary",
-        "displayName": "Lifted Blush",
-        "canonical": "oklch(95.3% 0.023 341.3)",
-        "tonalRamp": [
-          "#0f090c",
-          "#2a2227",
-          "#493e45",
-          "#6a5d65",
-          "#8c7e86",
-          "#ada1a8",
-          "#d0c6cc",
-          "#f4ecf1"
-        ],
-        "darkValue": "#2d1a2a"
-      },
-      "speaker-1": {
-        "role": "tertiary",
-        "displayName": "Speaker Blue",
-        "canonical": "oklch(56.1% 0.186 264.8)",
-        "tonalRamp": [
-          "#000331",
-          "#071c5d",
-          "#1a398e",
-          "#2f58c1",
-          "#4e7be8",
-          "#7ba2fa",
-          "#b1c9fc",
-          "#e7efff"
-        ],
-        "darkValue": "#7fa2ff"
-      },
-      "speaker-2": {
-        "role": "tertiary",
-        "displayName": "Speaker Magenta",
-        "canonical": "oklch(55.5% 0.191 337.4)",
-        "tonalRamp": [
-          "#1b0015",
-          "#440238",
-          "#6f125d",
-          "#9b2a84",
-          "#c250a8",
-          "#df7ec6",
-          "#fcaae6",
-          "#ffe6f7"
-        ],
-        "darkValue": "#e57cc4"
-      },
-      "speaker-3": {
-        "role": "tertiary",
-        "displayName": "Speaker Violet",
-        "canonical": "oklch(54.3% 0.190 294.6)",
-        "tonalRamp": [
-          "#0f0028",
-          "#2c0e58",
-          "#4a2887",
-          "#6b43b9",
-          "#8b67df",
-          "#ac90f8",
-          "#ccbeff",
-          "#efecfe"
-        ],
-        "darkValue": "#a98bf0"
-      },
-      "speaker-4": {
-        "role": "tertiary",
-        "displayName": "Speaker Teal",
-        "canonical": "oklch(60.6% 0.105 223.4)",
-        "tonalRamp": [
-          "#000d13",
-          "#032a36",
-          "#0a495c",
-          "#046c87",
-          "#2f8fad",
-          "#68b1cb",
-          "#99d3e9",
-          "#d9f4fe"
-        ],
-        "darkValue": "#5cc3e0"
-      },
-      "speaker-other": {
-        "role": "tertiary",
-        "displayName": "Speaker Other",
-        "canonical": "oklch(63.1% 0.054 292.4)",
-        "tonalRamp": [
-          "#0b0915",
-          "#252234",
-          "#423e57",
-          "#625c7c",
-          "#837d9e",
-          "#a5a1be",
-          "#c9c6de",
-          "#eeecfe"
-        ],
-        "darkValue": "#8f88b0"
-      },
-      "state-done": {
-        "role": "tertiary",
-        "displayName": "Done Violet",
-        "canonical": "oklch(48.0% 0.196 286.1)",
-        "tonalRamp": [
-          "#0c012b",
-          "#25115d",
-          "#402c8d",
-          "#5e47c1",
-          "#7d6be8",
-          "#9e96fa",
-          "#c4c2fc",
-          "#ededff"
-        ],
-        "darkValue": "#b6a2ff"
-      },
-      "state-failed": {
-        "role": "tertiary",
-        "displayName": "Failure Red",
-        "canonical": "oklch(52.9% 0.188 19.2)",
-        "tonalRamp": [
-          "#1e0003",
-          "#4b020f",
-          "#7e0720",
-          "#ae2237",
-          "#d64b57",
-          "#f37b80",
-          "#feb2b2",
-          "#fee9e8"
-        ],
-        "darkValue": "#ff7a8c"
-      },
-      "state-warn": {
-        "role": "tertiary",
-        "displayName": "Warn Indigo-Blue",
-        "canonical": "oklch(41.5% 0.155 270.8)",
-        "tonalRamp": [
-          "#04052a",
-          "#151e54",
-          "#2b3a81",
-          "#4458b1",
-          "#637bd7",
-          "#89a0f1",
-          "#b6c7fe",
-          "#e9eefe"
-        ],
-        "darkValue": "#9fb0ff"
+        "source": "frontend/src/styles/tokens.css"
       },
       "ground": {
         "role": "neutral",
-        "displayName": "Lavender Ground",
-        "canonical": "oklch(97.8% 0.007 295.5)",
+        "displayName": "Cool Ground",
+        "canonical": "#f4f5f8",
         "tonalRamp": [
           "#0b0b0c",
-          "#252527",
-          "#424144",
-          "#616064",
-          "#828286",
-          "#a5a4a8",
-          "#c9c8cc",
+          "#232425",
+          "#3f4041",
+          "#5d5d60",
+          "#7f8082",
+          "#a4a4a7",
+          "#cacacc",
           "#eeeef0"
         ],
-        "darkValue": "#13111c"
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#10131a"
       },
       "surface": {
         "role": "neutral",
         "displayName": "Paper",
-        "canonical": "oklch(100.0% 0.000 89.9)",
+        "canonical": "#ffffff",
         "tonalRamp": [
           "#0b0b0b",
-          "#252525",
-          "#424242",
-          "#616161",
-          "#828282",
-          "#a5a5a5",
-          "#c9c9c9",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
           "#eeeeee"
         ],
-        "darkValue": "#1c1929"
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#181c26"
       },
       "surface-sunk": {
         "role": "neutral",
-        "displayName": "Sunk Lavender",
-        "canonical": "oklch(95.0% 0.012 296.3)",
+        "displayName": "Sunk Slate",
+        "canonical": "#eceef3",
         "tonalRamp": [
           "#0b0b0d",
-          "#252428",
-          "#424147",
-          "#626067",
-          "#838188",
-          "#a5a4aa",
-          "#c9c8ce",
-          "#efeef2"
+          "#232426",
+          "#3e4043",
+          "#5c5d61",
+          "#7e8084",
+          "#a3a4a8",
+          "#c9cacd",
+          "#edeef1"
         ],
-        "darkValue": "#171424"
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#141821"
       },
       "ink": {
         "role": "neutral",
-        "displayName": "Indigo Ink",
-        "canonical": "oklch(20.7% 0.043 288.3)",
+        "displayName": "Slate Ink",
+        "canonical": "#141821",
         "tonalRamp": [
-          "#0b0a14",
-          "#242332",
-          "#413f53",
-          "#605e77",
-          "#817f99",
-          "#a4a2b9",
-          "#c8c7da",
-          "#ededfc"
+          "#090b0f",
+          "#21242a",
+          "#3c4048",
+          "#595e68",
+          "#7b808b",
+          "#a0a5ae",
+          "#c7cad2",
+          "#eceef4"
         ],
-        "darkValue": "#ece9f7"
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#e8ebf2"
       },
       "ink-muted": {
         "role": "neutral",
         "displayName": "Muted Ink",
-        "canonical": "oklch(46.0% 0.064 289.3)",
+        "canonical": "#525a6b",
         "tonalRamp": [
-          "#0b0918",
-          "#242238",
-          "#413d5b",
-          "#605c81",
-          "#817da4",
-          "#a4a0c3",
-          "#c8c5e3",
-          "#eeecfe"
+          "#080b11",
+          "#20242d",
+          "#3a404c",
+          "#565e6d",
+          "#788091",
+          "#9ea5b3",
+          "#c5cbd7",
+          "#eaeff8"
         ],
-        "darkValue": "#b2abd0"
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#aab2c3"
       },
       "ink-faint": {
         "role": "neutral",
         "displayName": "Faint Ink",
-        "canonical": "oklch(53.8% 0.062 291.0)",
+        "canonical": "#656d80",
         "tonalRamp": [
-          "#0b0917",
-          "#252237",
-          "#423d5a",
-          "#615c80",
-          "#827da3",
-          "#a5a0c2",
-          "#c9c5e2",
-          "#eeecfe"
+          "#080b11",
+          "#20242d",
+          "#3a404d",
+          "#565d6e",
+          "#788092",
+          "#9ea5b4",
+          "#c5cad7",
+          "#eaeef8"
         ],
-        "darkValue": "#9a93bb"
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#8f98ab"
       },
       "line": {
         "role": "neutral",
         "displayName": "Hairline",
-        "canonical": "oklch(89.1% 0.025 296.1)",
+        "canonical": "#d9dde6",
         "tonalRamp": [
-          "#0c0a10",
-          "#26242c",
-          "#43404b",
-          "#625f6d",
-          "#83808f",
-          "#a6a3b0",
-          "#cac7d3",
-          "#efedf6"
+          "#0a0b0e",
+          "#222428",
+          "#3d4045",
+          "#5a5e64",
+          "#7d8088",
+          "#a2a5ab",
+          "#c8cad0",
+          "#edeef3"
         ],
-        "darkValue": "#2e2a44"
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#262c3a"
       },
       "line-strong": {
         "role": "neutral",
         "displayName": "Strong Hairline",
-        "canonical": "oklch(81.3% 0.042 294.6)",
+        "canonical": "#bfc5d2",
         "tonalRamp": [
-          "#0c0913",
-          "#262331",
-          "#433f52",
-          "#625d76",
-          "#837e98",
-          "#a6a1b8",
-          "#cac6d9",
-          "#efecfb"
+          "#090b0f",
+          "#21242a",
+          "#3c4048",
+          "#595e68",
+          "#7b808b",
+          "#a0a5ae",
+          "#c7cad2",
+          "#eceef5"
         ],
-        "darkValue": "#423c60"
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#3a4256"
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Slate",
+        "canonical": "#36435f",
+        "tonalRamp": [
+          "#070b15",
+          "#1d2433",
+          "#364054",
+          "#515d78",
+          "#72809d",
+          "#99a5be",
+          "#c1cbdf",
+          "#e7efff"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#a9bce2"
       },
       "accent-ink": {
         "role": "primary",
-        "displayName": "On Indigo",
-        "darkValue": "#160f33"
+        "displayName": "Accent Ink",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#10131a"
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "Deep Slate Hover",
+        "canonical": "#2a354d",
+        "tonalRamp": [
+          "#070b14",
+          "#1e2432",
+          "#374052",
+          "#525e75",
+          "#74809a",
+          "#9aa5bb",
+          "#c2cbdd",
+          "#e8effd"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#c3d2ef"
+      },
+      "cite-bg": {
+        "role": "secondary",
+        "displayName": "Citation Blush",
+        "canonical": "#f6ddec",
+        "tonalRamp": [
+          "#10090d",
+          "#2b2027",
+          "#493b44",
+          "#6a5763",
+          "#8e7986",
+          "#b19fa9",
+          "#d4c6ce",
+          "#f6ebf1"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#4a1f3c"
+      },
+      "cite-ink": {
+        "role": "secondary",
+        "displayName": "Citation Plum",
+        "canonical": "#6b1d4c",
+        "tonalRamp": [
+          "#1a010f",
+          "#3c122a",
+          "#612949",
+          "#894169",
+          "#b1628d",
+          "#d08daf",
+          "#f0b8d3",
+          "#fee7f2"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#ffd3ec"
+      },
+      "cite-live": {
+        "role": "secondary",
+        "displayName": "Citation Magenta",
+        "canonical": "#b8287a",
+        "tonalRamp": [
+          "#1c000e",
+          "#46002a",
+          "#730a49",
+          "#a02169",
+          "#cb478d",
+          "#e97ab0",
+          "#fdb0d2",
+          "#fee7f1"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#f06bb2"
       },
       "cite-live-ink": {
         "role": "secondary",
-        "displayName": "On Magenta",
-        "darkValue": "#1a0b14"
-      },
-      "state-progress": {
-        "role": "tertiary",
-        "displayName": "Progress Blue",
-        "note": "Same value as speaker-1.",
-        "darkValue": "#7fa2ff",
+        "displayName": "Live Citation Ink",
+        "canonical": "#ffffff",
         "tonalRamp": [
-          "#000331",
-          "#071c5d",
-          "#1a398e",
-          "#2f58c1",
-          "#4e7be8",
-          "#7ba2fa",
-          "#b1c9fc",
-          "#e7efff"
-        ]
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#1a0b14"
+      },
+      "cite-live-tint": {
+        "role": "secondary",
+        "displayName": "Lifted Blush",
+        "canonical": "#fbeaf4",
+        "tonalRamp": [
+          "#0e090c",
+          "#292126",
+          "#463c42",
+          "#665961",
+          "#8a7c84",
+          "#ada1a8",
+          "#d1c7cd",
+          "#f4ecf0"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#2d1a2a"
+      },
+      "speaker-1": {
+        "role": "tertiary",
+        "displayName": "Speaker Blue",
+        "canonical": "#3d6be0",
+        "tonalRamp": [
+          "#00042e",
+          "#081c59",
+          "#193788",
+          "#2d54bb",
+          "#4c79e6",
+          "#78a1fe",
+          "#b3cbfc",
+          "#e7effe"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#7fa2ff"
+      },
+      "speaker-2": {
+        "role": "tertiary",
+        "displayName": "Speaker Magenta",
+        "canonical": "#b4389a",
+        "tonalRamp": [
+          "#1a0114",
+          "#410436",
+          "#6b125a",
+          "#962880",
+          "#bf4da6",
+          "#de7ec5",
+          "#fcade6",
+          "#ffe6f7"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#e57cc4"
+      },
+      "speaker-3": {
+        "role": "tertiary",
+        "displayName": "Speaker Violet",
+        "canonical": "#7a4fd0",
+        "tonalRamp": [
+          "#0f0128",
+          "#2a1054",
+          "#472882",
+          "#6741b2",
+          "#8965dd",
+          "#ab90f6",
+          "#cdc1fb",
+          "#efecfe"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#a98bf0"
+      },
+      "speaker-4": {
+        "role": "tertiary",
+        "displayName": "Speaker Teal",
+        "canonical": "#1f8fb0",
+        "tonalRamp": [
+          "#000d13",
+          "#032934",
+          "#04475a",
+          "#076882",
+          "#2b8dab",
+          "#68b0ca",
+          "#9dd4e9",
+          "#d9f4fe"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#5cc3e0"
+      },
+      "speaker-other": {
+        "role": "tertiary",
+        "displayName": "Speaker Grey",
+        "canonical": "#8a84a8",
+        "tonalRamp": [
+          "#0b0915",
+          "#242133",
+          "#403c54",
+          "#5e5977",
+          "#817b9c",
+          "#a5a0bd",
+          "#cbc7df",
+          "#eeecfe"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#8f98ab"
+      },
+      "tape-s0": {
+        "role": "tertiary",
+        "displayName": "Tape Marigold",
+        "canonical": "#f4b33e",
+        "tonalRamp": [
+          "#120900",
+          "#322000",
+          "#553a06",
+          "#7b560c",
+          "#a6761b",
+          "#cb9b4b",
+          "#ebc487",
+          "#feecd1"
+        ],
+        "source": "frontend/src/styles/tokens.css"
+      },
+      "tape-s1": {
+        "role": "tertiary",
+        "displayName": "Tape Paper",
+        "canonical": "#f3f2ee",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#242422",
+          "#40403d",
+          "#5e5e5a",
+          "#81807d",
+          "#a5a4a2",
+          "#cbcac8",
+          "#efeeed"
+        ],
+        "source": "frontend/src/styles/tokens.css"
+      },
+      "tape-s2": {
+        "role": "tertiary",
+        "displayName": "Tape Coral",
+        "canonical": "#ff8a7a",
+        "tonalRamp": [
+          "#1f0000",
+          "#450c08",
+          "#6e221b",
+          "#9a3a2f",
+          "#c45c4f",
+          "#e2897c",
+          "#ffb5aa",
+          "#fee9e5"
+        ],
+        "source": "frontend/src/styles/tokens.css"
+      },
+      "tape-s3": {
+        "role": "tertiary",
+        "displayName": "Tape Sky",
+        "canonical": "#8fb3e8",
+        "tonalRamp": [
+          "#030b1b",
+          "#13243d",
+          "#294062",
+          "#415e89",
+          "#6282b0",
+          "#8ba6ce",
+          "#b6cced",
+          "#e5efff"
+        ],
+        "source": "frontend/src/styles/tokens.css"
       },
       "state-new": {
         "role": "tertiary",
-        "displayName": "New (muted ink)",
-        "darkValue": "#9a93bb",
+        "displayName": "State New",
+        "canonical": "#525a6b",
         "tonalRamp": [
-          "#0b0918",
-          "#242238",
-          "#413d5b",
-          "#605c81",
-          "#817da4",
-          "#a4a0c3",
-          "#c8c5e3",
-          "#eeecfe"
-        ]
+          "#080b11",
+          "#20242d",
+          "#3a404c",
+          "#565e6d",
+          "#788091",
+          "#9ea5b3",
+          "#c5cbd7",
+          "#eaeff8"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#8f98ab"
+      },
+      "state-progress": {
+        "role": "tertiary",
+        "displayName": "State Progress",
+        "canonical": "#3d6be0",
+        "tonalRamp": [
+          "#00042e",
+          "#081c59",
+          "#193788",
+          "#2d54bb",
+          "#4c79e6",
+          "#78a1fe",
+          "#b3cbfc",
+          "#e7effe"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#7fa2ff"
+      },
+      "state-done": {
+        "role": "tertiary",
+        "displayName": "State Done",
+        "canonical": "#4a4fb0",
+        "tonalRamp": [
+          "#060527",
+          "#1b1c4f",
+          "#32367b",
+          "#4c52a9",
+          "#6c76d3",
+          "#929ded",
+          "#bdc7fe",
+          "#eaedff"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#aab0f2"
+      },
+      "state-failed": {
+        "role": "tertiary",
+        "displayName": "State Failed",
+        "canonical": "#c0263d",
+        "tonalRamp": [
+          "#1f0003",
+          "#4a000e",
+          "#79091f",
+          "#a82035",
+          "#d44855",
+          "#f17c80",
+          "#fbb6b5",
+          "#ffe8e8"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#ff7a8c"
       },
       "state-cancelled": {
         "role": "tertiary",
-        "displayName": "Cancelled (faint ink)",
-        "darkValue": "#8f88b0",
+        "displayName": "State Cancelled",
+        "canonical": "#656d80",
         "tonalRamp": [
-          "#0b0917",
-          "#252237",
-          "#423d5a",
-          "#615c80",
-          "#827da3",
-          "#a5a0c2",
-          "#c9c5e2",
-          "#eeecfe"
-        ]
+          "#080b11",
+          "#20242d",
+          "#3a404d",
+          "#565d6e",
+          "#788092",
+          "#9ea5b4",
+          "#c5cad7",
+          "#eaeef8"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#8f98ab"
+      },
+      "state-warn": {
+        "role": "tertiary",
+        "displayName": "State Warn",
+        "canonical": "#2f3f9e",
+        "tonalRamp": [
+          "#040628",
+          "#141d50",
+          "#2a387c",
+          "#4155ab",
+          "#6178d5",
+          "#89a0ef",
+          "#b9c9fb",
+          "#e9eefe"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#9fb0ff"
+      },
+      "selection": {
+        "role": "neutral",
+        "displayName": "Selection",
+        "canonical": "#dfe4ee",
+        "tonalRamp": [
+          "#0a0b0e",
+          "#222428",
+          "#3d4046",
+          "#5a5e65",
+          "#7c8089",
+          "#a1a5ac",
+          "#c8cbd0",
+          "#eceef3"
+        ],
+        "source": "frontend/src/styles/tokens.css",
+        "dark": "#2d3850"
+      },
+      "home-wall": {
+        "role": "neutral",
+        "displayName": "Shop Wall",
+        "canonical": "#36435f",
+        "tonalRamp": [
+          "#070b15",
+          "#1d2433",
+          "#364054",
+          "#515d78",
+          "#72809d",
+          "#99a5be",
+          "#c1cbdf",
+          "#e7efff"
+        ],
+        "source": "frontend/src/pages/HomePage.css (--h-*)",
+        "dark": "#2b3550"
+      },
+      "home-wall-ink": {
+        "role": "neutral",
+        "displayName": "Wall Frost",
+        "canonical": "#eef1f7",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#232427",
+          "#3e4043",
+          "#5b5e62",
+          "#7e8085",
+          "#a2a5a9",
+          "#c9cace",
+          "#edeef1"
+        ],
+        "source": "frontend/src/pages/HomePage.css (--h-*)"
+      },
+      "home-wall-muted": {
+        "role": "neutral",
+        "displayName": "Wall Muted",
+        "canonical": "#c3cbdc",
+        "tonalRamp": [
+          "#090b10",
+          "#20242c",
+          "#3b404a",
+          "#575e6b",
+          "#79808f",
+          "#9fa5b1",
+          "#c6cbd5",
+          "#ebeef6"
+        ],
+        "source": "frontend/src/pages/HomePage.css (--h-*)",
+        "dark": "#b4bdd0"
+      },
+      "home-bin": {
+        "role": "neutral",
+        "displayName": "Crate Black",
+        "canonical": "#131418",
+        "tonalRamp": [
+          "#0b0b0d",
+          "#232426",
+          "#3f3f43",
+          "#5c5d62",
+          "#7f8085",
+          "#a3a4a9",
+          "#c9cace",
+          "#eeeef1"
+        ],
+        "source": "frontend/src/pages/HomePage.css (--h-*)",
+        "dark": "#0c0e12"
+      },
+      "home-bin-edge": {
+        "role": "neutral",
+        "displayName": "Crate Lip",
+        "canonical": "#272a33",
+        "tonalRamp": [
+          "#0a0b0f",
+          "#222429",
+          "#3d3f47",
+          "#5a5d67",
+          "#7c808a",
+          "#a1a4ad",
+          "#c8cad1",
+          "#eceef4"
+        ],
+        "source": "frontend/src/pages/HomePage.css (--h-*)",
+        "dark": "#1f2229"
+      },
+      "home-bin-ink": {
+        "role": "neutral",
+        "displayName": "Crate Ink",
+        "canonical": "#c2c6cf",
+        "tonalRamp": [
+          "#0a0b0e",
+          "#222428",
+          "#3d4045",
+          "#5a5e65",
+          "#7d8088",
+          "#a2a5ab",
+          "#c8cad0",
+          "#eceef3"
+        ],
+        "source": "frontend/src/pages/HomePage.css (--h-*)"
+      },
+      "home-divider-soft": {
+        "role": "neutral",
+        "displayName": "Soft Marigold",
+        "canonical": "#fbe0ae",
+        "tonalRamp": [
+          "#110a00",
+          "#2e2209",
+          "#4e3d1c",
+          "#6f5a31",
+          "#947d52",
+          "#b6a27e",
+          "#d8c9ab",
+          "#f9edd7"
+        ],
+        "source": "frontend/src/pages/HomePage.css (--h-*)"
+      },
+      "home-sticker": {
+        "role": "neutral",
+        "displayName": "Coral Sticker",
+        "canonical": "#ff8a7a",
+        "tonalRamp": [
+          "#1f0000",
+          "#450c08",
+          "#6e221b",
+          "#9a3a2f",
+          "#c45c4f",
+          "#e2897c",
+          "#ffb5aa",
+          "#fee9e5"
+        ],
+        "source": "frontend/src/pages/HomePage.css (--h-*)"
+      },
+      "home-paper": {
+        "role": "neutral",
+        "displayName": "Counter Paper",
+        "canonical": "#f3f2ee",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#242422",
+          "#40403d",
+          "#5e5e5a",
+          "#81807d",
+          "#a5a4a2",
+          "#cbcac8",
+          "#efeeed"
+        ],
+        "source": "frontend/src/pages/HomePage.css (--h-*)",
+        "dark": "#181c26"
+      },
+      "home-card": {
+        "role": "neutral",
+        "displayName": "Card White",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ],
+        "source": "frontend/src/pages/HomePage.css (--h-*)",
+        "dark": "#1f2430"
+      },
+      "home-ink": {
+        "role": "neutral",
+        "displayName": "Counter Ink",
+        "canonical": "#131418",
+        "tonalRamp": [
+          "#0b0b0d",
+          "#232426",
+          "#3f3f43",
+          "#5c5d62",
+          "#7f8085",
+          "#a3a4a9",
+          "#c9cace",
+          "#eeeef1"
+        ],
+        "source": "frontend/src/pages/HomePage.css (--h-*)",
+        "dark": "#e8ebf2"
+      },
+      "home-muted": {
+        "role": "neutral",
+        "displayName": "Counter Muted",
+        "canonical": "#555963",
+        "tonalRamp": [
+          "#0a0b0e",
+          "#222429",
+          "#3d4047",
+          "#5a5d67",
+          "#7c808a",
+          "#a1a4ad",
+          "#c8cad1",
+          "#eceef4"
+        ],
+        "source": "frontend/src/pages/HomePage.css (--h-*)",
+        "dark": "#aab2c3"
+      },
+      "home-slip-line": {
+        "role": "neutral",
+        "displayName": "Slip Rule",
+        "canonical": "#b6b9c2",
+        "tonalRamp": [
+          "#0a0b0e",
+          "#222428",
+          "#3e4045",
+          "#5b5d65",
+          "#7d8088",
+          "#a2a4ab",
+          "#c8cad0",
+          "#edeef3"
+        ],
+        "source": "frontend/src/pages/HomePage.css (--h-*)",
+        "dark": "#3a4256"
+      },
+      "home-vinyl": {
+        "role": "neutral",
+        "displayName": "Vinyl",
+        "canonical": "#191b21",
+        "tonalRamp": [
+          "#0a0b0e",
+          "#232428",
+          "#3e4045",
+          "#5b5d64",
+          "#7d8087",
+          "#a2a4ab",
+          "#c9cacf",
+          "#edeef2"
+        ],
+        "source": "frontend/src/pages/HomePage.css (--h-*)"
       }
     },
     "typographyMeta": {
@@ -505,6 +889,22 @@
       "label": {
         "displayName": "Label",
         "purpose": "Stamps, column headers, meta, citation numbers, nav labels. Sentence case."
+      },
+      "home-sign": {
+        "displayName": "Shop Sign",
+        "purpose": "Home h1 only, uppercase Anton; one word may be marigold."
+      },
+      "home-block-head": {
+        "displayName": "Counter Head",
+        "purpose": "Home counter block headings, uppercase Anton."
+      },
+      "home-text": {
+        "displayName": "Shop Text",
+        "purpose": "All home body text, captions, meta, inputs (Archivo Variable)."
+      },
+      "home-hand": {
+        "displayName": "Marker Hand",
+        "purpose": "Divider-card names and the staff-pick quote only (Permanent Marker)."
       }
     },
     "shadows": [
@@ -522,6 +922,31 @@
         "name": "focus-ring",
         "value": "0 0 0 2px var(--ground), 0 0 0 4px var(--cite-live)",
         "purpose": "Every :focus-visible, replacing outline."
+      },
+      {
+        "name": "home-front-sleeve",
+        "value": "0 30px 40px -18px rgba(0,0,0,0.6)",
+        "purpose": "Home only: the face-out record."
+      },
+      {
+        "name": "home-back-sleeve",
+        "value": "0 18px 30px -18px rgba(0,0,0,0.55)",
+        "purpose": "Home only: sleeves behind the front one."
+      },
+      {
+        "name": "home-book-cover",
+        "value": "0 16px 22px -14px rgba(0,0,0,0.55)",
+        "purpose": "Home only: covers on the counter rack."
+      },
+      {
+        "name": "home-poster",
+        "value": "0 14px 24px -14px rgba(0,0,0,0.6)",
+        "purpose": "Home only: taped posters."
+      },
+      {
+        "name": "home-staff-pick",
+        "value": "0 12px 20px -12px rgba(0,0,0,0.6)",
+        "purpose": "Home only: the pinned staff-pick card."
       }
     ],
     "motion": [
@@ -549,28 +974,65 @@
         "name": "reduced-motion",
         "value": "1ms",
         "purpose": "All animation and transition durations under prefers-reduced-motion."
+      },
+      {
+        "name": "home-flip-out",
+        "value": "180ms cubic-bezier(0.55, 0, 1, 0.45)",
+        "purpose": "Crate flip, phase 1: front sleeve tips back (translateY 34px, rotate 3deg, scale 0.94, fade out)."
+      },
+      {
+        "name": "home-flip-in",
+        "value": "520ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Crate flip, phase 2: next sleeve rises from 22px low, -1deg, 35% opacity to rest at -4deg."
+      },
+      {
+        "name": "home-progress",
+        "value": "width 600ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Back-room progress bar: the only home element that moves on its own."
+      },
+      {
+        "name": "home-lift",
+        "value": "120ms to 220ms ease-out; sleeve -6px, cover -4px, divider tab -4px, staff pick -2px and -1deg",
+        "purpose": "Home hover lifts."
       }
     ],
     "breakpoints": [
       {
         "name": "mobile",
         "value": "767px",
-        "purpose": "Rail becomes 52px top bar; Library rows restack; Episode gutter folds."
+        "purpose": "Top bar hides wordmark; Library rows restack; Episode gutter folds."
+      },
+      {
+        "name": "topbar-icons",
+        "value": "420px",
+        "purpose": "Top bar link icons hide."
       },
       {
         "name": "refs-collapse",
         "value": "1199px",
-        "purpose": "References column becomes inline disclosure; conversations become a drawer."
+        "purpose": "References column becomes an inline disclosure."
+      },
+      {
+        "name": "home-single-column",
+        "value": "1100px",
+        "purpose": "Home: counter drops below the wall; seam turns horizontal; crate caps at 820px."
+      },
+      {
+        "name": "home-narrow",
+        "value": "700px",
+        "purpose": "Home: pinboard grid, ask field moves onto the wall, third divider hides, bin caption and slips stack."
       }
     ],
     "layout": {
-      "railWidth": "72px",
       "conversationsWidth": "280px",
       "referencesWidth": "380px",
       "measure": "68ch",
       "pageMax": "1320px",
       "episodeGutter": "56px",
-      "composerMax": "740px"
+      "composerMax": "740px",
+      "topbarHeight": "52px",
+      "refsWidth": "380px",
+      "home": "Two columns: wall minmax(0,1.18fr) and counter minmax(400px,1fr) joined by a 10px crate-black seam; wall grid of intro and 330px pinboard over a full-width crate (aspect 100:54, max 440px)."
     }
   },
   "components": [
@@ -638,23 +1100,64 @@
       "css": ".ds-strip{position:relative;width:320px;height:20px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--surface-sunk);overflow:hidden} .ds-strip i{position:absolute;top:0;bottom:0} .ds-strip b{position:absolute;top:0;bottom:0;width:2px;background:var(--cite-live);transform:translateX(-1px)}"
     },
     {
-      "name": "Navigation Rail",
+      "name": "Top Bar",
       "kind": "nav",
-      "refersTo": "nav-rail",
-      "description": "72px indigo shell rail with serif monogram and icon-over-label links.",
-      "html": "<nav class=\"ds-rail\"><a class=\"ds-logo\">R</a><a class=\"ds-nav ds-nav--on\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><path d=\"M4 5h16v11H9l-5 4z\"/></svg>Chat</a><a class=\"ds-nav\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><path d=\"M5 4v16M10 4v16M15 4l4 16\"/></svg>Library</a></nav>",
-      "css": ".ds-rail{display:flex;flex-direction:column;align-items:center;gap:20px;width:72px;padding:20px 4px;background:var(--shell);border-right:1px solid var(--shell-line);font-family:var(--font-ui)} .ds-logo{width:36px;height:36px;display:grid;place-items:center;border:1.5px solid var(--shell-ink-muted);border-radius:var(--radius-sm);font-family:var(--font-prose);font-size:18px;font-weight:600;color:var(--shell-ink)} .ds-nav{display:flex;flex-direction:column;align-items:center;gap:3px;width:58px;padding:8px 4px;border-radius:var(--radius);border:1px solid transparent;color:var(--shell-ink-muted);font-size:var(--text-xs);font-weight:600;text-decoration:none;cursor:pointer;transition:color var(--dur-fast) var(--ease-out),background-color var(--dur-fast) var(--ease-out)} .ds-nav:hover,.ds-nav--on{color:var(--shell-ink);background:var(--shell-line)} .ds-nav:focus-visible{outline:none;box-shadow:var(--focus-ring)}"
+      "refersTo": "nav-topbar",
+      "description": "52px slate bar; active section carries a 2px marigold rule flush with the bottom edge.",
+      "html": "<nav class=\"ds-topbar\"><a class=\"ds-brand\" href=\"#\"><span class=\"ds-logo\">P</span><span class=\"ds-wordmark\">Pods</span></a><a class=\"ds-nav ds-nav--on\" href=\"#\">Chat</a><a class=\"ds-nav\" href=\"#\">Library</a><a class=\"ds-nav\" href=\"#\">Books</a><a class=\"ds-nav\" href=\"#\">Jobs</a></nav>",
+      "css": ".ds-topbar{display:flex;align-items:center;gap:24px;height:52px;padding:0 24px;background:var(--shell);color:var(--shell-ink);border-bottom:1px solid var(--shell-line);font-family:var(--font-ui)} .ds-brand{display:inline-flex;align-items:center;gap:8px;color:var(--shell-ink);text-decoration:none;margin-right:0} .ds-logo{width:28px;height:28px;display:grid;place-items:center;border:1.5px solid var(--shell-ink-muted);border-radius:var(--radius-sm);font-family:var(--font-prose);font-size:15px;font-weight:600} .ds-wordmark{font-family:var(--font-prose);font-size:1.0625rem;font-weight:600} .ds-nav{position:relative;display:inline-flex;align-items:center;height:100%;padding:0 12px;color:var(--shell-ink-muted);font-size:var(--text-sm);font-weight:600;text-decoration:none;transition:color var(--dur-fast) var(--ease-out)} .ds-nav:hover,.ds-nav--on{color:var(--shell-ink)} .ds-nav--on::after{content:\"\";position:absolute;left:12px;right:12px;bottom:-1px;height:2px;border-radius:1px;background:var(--marigold)} .ds-nav:focus-visible{outline:none;box-shadow:var(--focus-ring)}"
+    },
+    {
+      "name": "Home Ask Field",
+      "kind": "input",
+      "refersTo": "home-ask-field",
+      "description": "The counter: 60px framed field and marigold Ask button; asking lands in Chat.",
+      "html": "<form class=\"ds-home ds-ask\" onsubmit=\"return false\"><input class=\"ds-ask-input\" placeholder=\"What did they say about sleep?\" aria-label=\"Ask\"/><button class=\"ds-ask-btn\">Ask</button></form>",
+      "css": ".ds-home{--h-wall:#36435f;--h-bin:#131418;--h-bin-edge:#272a33;--h-bin-ink:#c2c6cf;--h-div:var(--marigold,#f4b33e);--h-div-soft:#fbe0ae;--h-sticker:#ff8a7a;--h-paper:#f3f2ee;--h-card:#fff;--h-ink:#131418;--h-muted:#555963;--h-link:#36435f;--h-slip-line:#b6b9c2;font-family:\"Archivo Variable\",var(--font-ui)} .ds-ask{display:flex;height:60px;border:3px solid var(--h-ink);background:var(--h-card)} .ds-ask:focus-within{box-shadow:var(--focus-ring)} .ds-ask-input{flex:1;min-width:0;border:0;padding:0 18px;background:transparent;color:var(--h-ink);font:500 1.0625rem \"Archivo Variable\",var(--font-ui);outline:none} .ds-ask-input::placeholder{color:var(--h-muted)} .ds-ask-btn{padding:0 26px;border:0;box-shadow:inset 3px 0 0 var(--h-ink);background:var(--h-div);color:#131418;font:800 15px \"Archivo Variable\",var(--font-ui);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:background var(--dur-fast) var(--ease-out)} .ds-ask-btn:hover{background:#f7c463} .ds-ask-btn:focus-visible{outline:none;box-shadow:var(--focus-ring)}"
+    },
+    {
+      "name": "Home Divider Tab",
+      "kind": "chip",
+      "refersTo": "home-divider-tab",
+      "description": "Hand-lettered divider card per podcast; jumps the crate to that show.",
+      "html": "<div class=\"ds-home ds-tabs\"><button class=\"ds-tab ds-tab--soft\">Huberman Lab</button><button class=\"ds-tab\">Modern Wisdom</button></div>",
+      "css": ".ds-home{--h-wall:#36435f;--h-bin:#131418;--h-bin-edge:#272a33;--h-bin-ink:#c2c6cf;--h-div:var(--marigold,#f4b33e);--h-div-soft:#fbe0ae;--h-sticker:#ff8a7a;--h-paper:#f3f2ee;--h-card:#fff;--h-ink:#131418;--h-muted:#555963;--h-link:#36435f;--h-slip-line:#b6b9c2;} .ds-tabs{display:flex;gap:6px;align-items:flex-end;padding:24px 16px 0;background:var(--h-wall)} .ds-tab{height:50px;padding:8px 16px 0;border:0;border-radius:6px 6px 0 0;background:var(--h-div);color:var(--h-bin);font-family:\"Permanent Marker\",cursive;font-size:18px;line-height:1.2;transform:rotate(1.2deg);cursor:pointer;transition:transform var(--dur-fast) var(--ease-out)} .ds-tab--soft{background:var(--h-div-soft);height:44px;transform:rotate(-1deg)} .ds-tab:hover{transform:translateY(-4px)} .ds-tab:focus-visible{outline:none;box-shadow:var(--focus-ring)}"
+    },
+    {
+      "name": "Home Crate Sleeve",
+      "kind": "card",
+      "refersTo": "home-bin",
+      "description": "Face-out record sleeve with groove art, coral duration sticker, in the crate-black bin.",
+      "html": "<div class=\"ds-home ds-crate\"><a class=\"ds-sleeve\" href=\"#\"><svg viewBox=\"-200 -262 400 400\" class=\"ds-groove\" aria-hidden=\"true\"><circle r=\"174\" fill=\"#191b21\"/><circle r=\"150\" fill=\"none\" stroke=\"#f4b33e\" stroke-width=\"2.2\"/><circle r=\"130\" fill=\"none\" stroke=\"#f3f2ee\" stroke-width=\"2.2\"/><circle r=\"110\" fill=\"none\" stroke=\"#f4b33e\" stroke-width=\"2.2\"/><circle r=\"90\" fill=\"none\" stroke=\"#ff8a7a\" stroke-width=\"2.2\"/><circle r=\"50\" fill=\"#f4b33e\"/><circle r=\"4\" fill=\"#100d0b\"/></svg><span class=\"ds-show\">Huberman Lab</span><span class=\"ds-num\">455</span></a><span class=\"ds-sticker\">2:18:16<small>486 turns</small></span><div class=\"ds-bin\">The groove is the whole conversation.</div></div>",
+      "css": ".ds-home{--h-wall:#36435f;--h-bin:#131418;--h-bin-edge:#272a33;--h-bin-ink:#c2c6cf;--h-div:var(--marigold,#f4b33e);--h-div-soft:#fbe0ae;--h-sticker:#ff8a7a;--h-paper:#f3f2ee;--h-card:#fff;--h-ink:#131418;--h-muted:#555963;--h-link:#36435f;--h-slip-line:#b6b9c2;font-family:\"Archivo Variable\",var(--font-ui)} .ds-crate{position:relative;height:300px;background:var(--h-wall)} .ds-sleeve{position:absolute;left:20px;bottom:40px;width:220px;aspect-ratio:1;background:#100d0b;color:#f2efe6;border-radius:2px;transform:rotate(-4deg);box-shadow:0 30px 40px -18px rgba(0,0,0,.6);text-decoration:none;transition:transform var(--dur) var(--ease-out);z-index:2} .ds-sleeve:hover{transform:rotate(-4deg) translateY(-6px)} .ds-sleeve:focus-visible{outline:none;box-shadow:var(--focus-ring)} .ds-groove{position:absolute;inset:0;width:100%;height:100%} .ds-show{position:absolute;left:7%;top:5%;font-weight:800;font-size:11px;letter-spacing:.08em;text-transform:uppercase} .ds-num{position:absolute;right:5%;top:2.5%;font-family:Anton,sans-serif;font-size:28px} .ds-sticker{position:absolute;left:200px;bottom:60px;z-index:4;width:72px;aspect-ratio:1;border-radius:50%;display:grid;place-content:center;text-align:center;background:var(--h-sticker);color:var(--h-bin);font-weight:800;font-size:15px;line-height:1;font-variant-numeric:tabular-nums;transform:rotate(9deg)} .ds-sticker small{display:block;margin-top:4px;font-size:9px;letter-spacing:.06em;text-transform:uppercase} .ds-bin{position:absolute;left:0;right:0;bottom:0;height:84px;padding:0 20px;display:flex;align-items:center;background:var(--h-bin);border-top:6px solid var(--h-bin-edge);color:var(--h-bin-ink);font-size:13px;z-index:3}"
+    },
+    {
+      "name": "Home Staff Pick",
+      "kind": "card",
+      "refersTo": "home-staff-pick",
+      "description": "Pinned, ruled counter-paper card with a verified quote in marker; links to the moment.",
+      "html": "<div class=\"ds-home ds-wallbg\"><a class=\"ds-pick\" href=\"#\"><span class=\"ds-pin\"></span><span class=\"ds-stamp\">Staff pick</span><span class=\"ds-quote\">&ldquo;I had to kind of find a way to sing inside my cage&rdquo;</span><span class=\"ds-meta\">Robert Greene · Ep. 0455 · 1:27:03</span></a></div>",
+      "css": ".ds-home{--h-wall:#36435f;--h-bin:#131418;--h-bin-edge:#272a33;--h-bin-ink:#c2c6cf;--h-div:var(--marigold,#f4b33e);--h-div-soft:#fbe0ae;--h-sticker:#ff8a7a;--h-paper:#f3f2ee;--h-card:#fff;--h-ink:#131418;--h-muted:#555963;--h-link:#36435f;--h-slip-line:#b6b9c2;font-family:\"Archivo Variable\",var(--font-ui)} .ds-wallbg{padding:32px;background:var(--h-wall)} .ds-pick{position:relative;display:grid;gap:8px;width:270px;padding:18px 16px 16px;background:repeating-linear-gradient(transparent 0 25px,rgba(54,67,95,.16) 25px 26px) 0 40px/100% 100% no-repeat,#f3f2ee;color:#131418;text-decoration:none;transform:rotate(-2deg);box-shadow:0 12px 20px -12px rgba(0,0,0,.6);transition:transform var(--dur) var(--ease-out)} .ds-pick:hover{transform:rotate(-1deg) translateY(-2px)} .ds-pick:focus-visible{outline:none;box-shadow:var(--focus-ring)} .ds-pin{position:absolute;right:16px;top:-8px;width:16px;height:16px;border-radius:50%;background:var(--h-div);box-shadow:inset -2px -2px 0 rgba(0,0,0,.25)} .ds-stamp{position:absolute;top:-13px;left:14px;padding:3px 8px 2px;border:2px solid var(--h-sticker);border-radius:3px;background:#f3f2ee;color:#b8473a;font-family:Anton,sans-serif;font-size:.9375rem;line-height:1;letter-spacing:.05em;text-transform:uppercase;transform:rotate(-5deg)} .ds-quote{font-family:\"Permanent Marker\",cursive;font-size:1.375rem;line-height:1.12} .ds-meta{font-size:12px;font-weight:600;color:#555963}"
+    },
+    {
+      "name": "Home Hold Slip",
+      "kind": "card",
+      "refersTo": "home-hold-slip",
+      "description": "Dashed slip with an inked rubber stamp; Back room carries the one self-moving progress bar.",
+      "html": "<div class=\"ds-home ds-counter\"><a class=\"ds-slip\" href=\"#\"><span class=\"ds-stamp\">Back room</span><span class=\"ds-main\">Ep. 0456 · Essentials: Cold &amp; Heat</span><span class=\"ds-smeta\">Transcribing</span><span class=\"ds-prog\"><span style=\"width:42%\"></span></span></a></div>",
+      "css": ".ds-home{--h-wall:#36435f;--h-bin:#131418;--h-bin-edge:#272a33;--h-bin-ink:#c2c6cf;--h-div:var(--marigold,#f4b33e);--h-div-soft:#fbe0ae;--h-sticker:#ff8a7a;--h-paper:#f3f2ee;--h-card:#fff;--h-ink:#131418;--h-muted:#555963;--h-link:#36435f;--h-slip-line:#b6b9c2;font-family:\"Archivo Variable\",var(--font-ui)} .ds-counter{padding:24px;background:var(--h-paper)} .ds-slip{position:relative;display:grid;gap:4px;max-width:280px;padding:44px 14px 12px;background:var(--h-card);border:1.5px dashed var(--h-slip-line);color:var(--h-ink);text-decoration:none;transition:border-color var(--dur-fast) var(--ease-out)} .ds-slip:hover{border-color:var(--h-link)} .ds-slip:focus-visible{outline:none;box-shadow:var(--focus-ring)} .ds-stamp{position:absolute;top:10px;right:12px;padding:3px 8px 2px;border:2px solid var(--h-sticker);border-radius:3px;color:#b8473a;font-family:Anton,sans-serif;font-size:.9375rem;line-height:1;letter-spacing:.05em;text-transform:uppercase;transform:rotate(-6deg);opacity:.9} .ds-main{font-size:14px;font-weight:600;line-height:1.3} .ds-smeta{font-size:12px;color:var(--h-muted)} .ds-prog{height:4px;margin-top:6px;background:var(--h-slip-line);overflow:hidden} .ds-prog span{display:block;height:100%;background:var(--h-div);transition:width 600ms var(--ease-out)}"
     }
   ],
   "narrative": {
     "northStar": "The Reference Apparatus",
-    "overview": "**Creative North Star: \"The Reference Apparatus\"**\n\nPods reads like a research paper that answers back. Every answer is a serif paragraph carrying numbered citation markers, and its reference list stands beside it the way a paper holds its sources: episode number first, title, a duration-exact speaker strip, then speaker and timestamp. The page is held by a deep indigo shell rail on a lavender-white ground, with hairline modules rather than cards and bubbles. The centered chat column with grey bubbles and source pills is the rejected model.\n\nDensity is high and calm. Rules are 1px hairlines, radii are small (3 to 10px), and nothing floats: depth is tonal (ground, surface, sunk surface) plus 1px rings. Every time, count, and catalog number is set in tabular numerals so columns of figures align. Colour is spent on meaning only: indigo for structure and action, a pale-pink chip for a citation at rest, magenta for the one citation the reader is looking at, a blue/magenta/violet/teal series for speakers, and a stamp family for job state.\n\nThe system follows the operating system's light or dark preference; both themes are defined from the same token names in `frontend/src/styles/tokens.css`, which is the contract file components consume.",
+    "overview": "Pods reads like a research paper that answers back. Every answer is a serif paragraph carrying numbered citation markers, and its reference list stands beside it the way a paper holds its sources: episode number first, title, a duration-exact speaker strip, then speaker and timestamp. The working pages are held by a deep slate top bar on a cool grey-white ground, with hairline modules rather than cards and bubbles. The centered chat column with grey bubbles and source pills is the rejected model.\n\nDensity is high and calm. Rules are 1px hairlines, radii are small (3 to 10px), and nothing floats: depth is tonal (ground, surface, sunk surface) plus 1px rings. Every time, count, and catalog number is set in tabular numerals so columns of figures align. Colour is spent on meaning only: slate for structure and action, one marigold rule for where you are, a pale-pink chip for a citation at rest, magenta for the one citation the reader is looking at, a blue/magenta/violet/teal series for speakers, and a stamp family for job state.\n\nThe front door is a different room in the same building. The home page (\"Browse Bins\") is the library as a record shop: a slate shop wall with taped posters and a staff pick, a near-black crate of sleeves along the bottom, and a paper counter for new books and asking. It shares the top bar's slate and marigold so the shell and the wall read as one family, but it owns its type, materials, and depth (see Components, Home). The apparatus rules below hold on every other page.\n\nThe system follows the operating system's light or dark preference; both themes come from the same token names in `frontend/src/styles/tokens.css`, the contract file components consume. The home page scopes its own `--h-*` tokens on `.home` in `frontend/src/pages/HomePage.css`, built on the shared slate, marigold, and tape tokens.",
     "keyCharacteristics": [
-      "Indigo shell rail (72px) on lavender-white ground; three-column chat (280px conversations, flexible centre, 380px references).",
+      "Slate top bar (52px) on a cool grey-white ground; the active section carries a 2px marigold rule.",
       "Serif for reading (answers, summaries, episode titles); sans for all UI.",
       "Tabular numerals everywhere a number appears.",
       "Focusing a citation lifts its reference in magenta and dims the others to 45% opacity.",
-      "Hairlines and 1px rings instead of shadows; no gradients, no glass.",
+      "Apparatus pages: hairlines and 1px rings instead of shadows; no gradients, no glass.",
+      "Home: a record shop built from physical objects (sleeves, divider cards, taped posters, slips), in Anton, Archivo, and Permanent Marker.",
       "Authored SVG icons only; no emojis, no unicode glyphs as icons."
     ],
     "rules": [
@@ -665,51 +1168,76 @@
       },
       {
         "name": "The Cool Stamps Rule",
-        "body": "State colours stay in the indigo, blue, and violet family. Red (state-failed) appears only for failure. No amber and no green anywhere in the product.",
+        "body": "State colours stay in the slate, blue, indigo, and violet family; red (state-failed) appears only for failure; no green anywhere. Marigold and coral are never state colours.",
+        "section": "colors"
+      },
+      {
+        "name": "The Marigold Is Place Rule",
+        "body": "Outside the home world, marigold marks exactly one thing per screen: the active section's 2px rule (plus the tape-s0 progress fill on a dark book placeholder). Inside the home world it is the shop's sign paint. It never appears as a fill, badge, or highlight on apparatus pages.",
         "section": "colors"
       },
       {
         "name": "The Meaning-Only Colour Rule",
-        "body": "Every non-neutral colour encodes something (structure, action, citation, speaker, state). Decorative colour has no slot in the token file; components never hard-code colours.",
+        "body": "Every non-neutral colour encodes something (structure, action, place, citation, speaker, state). Components consume colours through tokens; the home page's colours live in its `--h-*` scope, never inline.",
         "section": "colors"
       },
       {
         "name": "The Tabular Rule",
-        "body": "Body sets `font-variant-numeric: tabular-nums` globally; every time, duration, count, cost, and episode number stays tabular.",
+        "body": "Body sets `font-variant-numeric: tabular-nums` globally; every time, duration, count, cost, and episode number stays tabular, on the home crate too.",
         "section": "typography"
       },
       {
         "name": "The Serif Is Source Rule",
-        "body": "Serif is reserved for answer prose, summaries, and episode titles. Headings inside summaries, all controls, and all metadata are sans.",
+        "body": "Serif is reserved for answer prose, summaries, episode titles, and the wordmark. Headings inside summaries, all controls, and all metadata are sans.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sentence Case Rule",
+        "body": "Apparatus pages set nothing in uppercase. Uppercase belongs to the home world's signage (Anton heads, sleeve show names, seals, stickers, the Ask button).",
+        "section": "typography"
+      },
+      {
+        "name": "The Marker Is Handwriting Rule",
+        "body": "Permanent Marker appears only where a clerk would write by hand: divider cards and the staff-pick quote. Never for headings, buttons, or body.",
         "section": "typography"
       },
       {
         "name": "The Ring Not Shadow Rule",
-        "body": "If something needs to stand forward, give it a 1px ring and a tonal fill. Blur shadows, gradients, and glass do not exist here.",
+        "body": "On apparatus pages, if something needs to stand forward, give it a 1px ring and a tonal fill. Blur shadows, gradients, and glass do not exist there.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Objects Cast Shadows Rule",
+        "body": "On the home page only an object (sleeve, cover, poster, pinned card) casts a shadow, and only downward with negative spread. Text blocks, controls, and the counter never do.",
         "section": "elevation"
       }
     ],
     "dos": [
-      "**Do** consume colours, type, space, radius, and motion only through the custom properties in `styles/tokens.css`; components never hard-code colour.",
+      "**Do** consume colours, type, space, radius, and motion only through the custom properties in `styles/tokens.css`, or the home's page-scoped `--h-*` tokens built on them.",
       "**Do** reserve Citation Magenta (cite-live) for the live/focused citation and the focus ring; resting chips use cite-bg / cite-ink.",
-      "**Do** keep state stamps in the indigo, blue, and violet family, with state-failed red only for failure.",
+      "**Do** keep state stamps in the slate, blue, indigo, and violet family, with state-failed red only for failure.",
+      "**Do** mark the active section with the 2px marigold rule and nothing else marigold on apparatus pages.",
       "**Do** set every number in tabular numerals.",
       "**Do** set reading text in Source Serif 4 at a 68ch measure and all UI in Source Sans 3.",
-      "**Do** separate modules with 1px hairlines and lift with 1px rings plus tonal fills.",
+      "**Do** separate apparatus modules with 1px hairlines and lift with 1px rings plus tonal fills.",
       "**Do** align Episode player, summary, and transcript to one column (56px gutter plus 68ch) and open each transcript line with the speaker name.",
       "**Do** keep Library rows compact and one-line (title with meta beneath), restacking duration and status into the title cell below 768px.",
       "**Do** use authored SVG icons from `components/Icons.tsx`.",
-      "**Do** use the shared motion: ease-out `cubic-bezier(0.16, 1, 0.3, 1)` at 120ms for controls and 220ms for citation lift and dimming, collapsed under reduced motion."
+      "**Do** use the shared motion: ease-out `cubic-bezier(0.16, 1, 0.3, 1)` at 120ms for controls and 220ms for citation lift and dimming, collapsed under reduced motion.",
+      "**Do** build the home only from real data: the library's own shows as duotone posters, verified quotes, real episodes in time order, real counts.",
+      "**Do** draw voices on dark slate or black in the tape series, and voices on light surfaces in the speaker series."
     ],
     "donts": [
       "**Don't** use emojis or unicode glyphs as icons anywhere.",
-      "**Don't** use amber or green, for states or for anything else.",
+      "**Don't** use green anywhere, or marigold and coral as state colours.",
       "**Don't** give any element other than the live citation and the focus ring the magenta citation hue.",
-      "**Don't** place eyebrow or kicker labels above headings.",
-      "**Don't** use coloured border-left or border-right rules thicker than 1px.",
-      "**Don't** use drop shadows, gradients, or glass; 1px rings only.",
+      "**Don't** place eyebrow or kicker labels above headings; on the home, an object's name is a rubber stamp inked onto the object, never a caps line above its title.",
+      "**Don't** use coloured border-left or border-right rules thicker than 1px on apparatus pages.",
+      "**Don't** use drop shadows, gradients, or glass on apparatus pages; 1px rings only. Home shadows belong to objects.",
+      "**Don't** carry Anton, Archivo, Permanent Marker, uppercase signage, or tilted objects out of the home page.",
+      "**Don't** animate anything on the home page on its own except the back-room progress bar.",
       "**Don't** build chat as a centered column of grey bubbles with source pills.",
-      "**Don't** use podcast logos or branding as the app's identity."
+      "**Don't** use podcast logos or branding as the app's identity; show artwork appears only as a duotoned poster of that show."
     ]
   }
 }

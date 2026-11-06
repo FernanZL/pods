@@ -289,6 +289,18 @@ class BookEstimate(BaseModel):
     voices: list[BookVoice] = []  # speakers who can tell the book, host first
 
 
+class BookQuote(BaseModel):
+    """A verified line from a finished book (the home page's staff pick)."""
+
+    text: str
+    speaker: str
+    start: float  # seconds into the episode
+    episode_id: int
+    episode_number: int
+    book_id: int
+    book_title: str
+
+
 class BookOut(BaseModel):
     id: int
     episode_id: int

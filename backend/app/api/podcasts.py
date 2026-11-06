@@ -5,6 +5,8 @@ from contextlib import suppress
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import FileResponse
 from sqlalchemy import func
 from sqlmodel import Session, col, select
 
@@ -13,6 +15,7 @@ from app.db import get_session
 from app.jobs.worker import worker
 from app.models import Episode, Job, Podcast
 from app.schemas import PodcastCreate, PodcastOut
+from app.services.artwork import poster_path
 from app.services.feeds import sync_podcast
 
 # TODO(security): Add authentication, CSRF protection, and rate limiting at the API gateway
@@ -57,6 +60,19 @@ def _podcast_to_out(session: Session, podcast: Podcast) -> PodcastOut:
         indexed_count=int(indexed),
         refreshed_at=podcast.refreshed_at,
     )
+
+
+@router.get("/podcasts/{podcast_id}/poster.png")
+async def podcast_poster(podcast_id: int, session: SessionDep) -> FileResponse:
+    """The show's artwork as a duotone poster for the home page (made locally, cached).
+    404 when the show has no artwork; the page then draws a typographic poster."""
+    podcast = session.get(Podcast, podcast_id)
+    if podcast is None:
+        raise HTTPException(status_code=404, detail="Podcast not found")
+    path = await run_in_threadpool(poster_path, podcast)
+    if path is None:
+        raise HTTPException(status_code=404, detail="This podcast has no artwork")
+    return FileResponse(path, media_type="image/png", headers={"Cache-Control": "max-age=86400"})
 
 
 @router.get("/podcasts", response_model=list[PodcastOut])

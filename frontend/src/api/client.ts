@@ -1,6 +1,7 @@
 import type {
   Book,
   BookEstimate,
+  BookQuote,
   TranscriptCheck,
   DiscoverGenre,
   DiscoverPodcast,
@@ -299,6 +300,16 @@ export function bookPdfUrl(id: number, download = false): string {
 }
 
 /** Cover thumbnail; `v` busts the cache after a reshuffle. */
+/** GET /api/books/quote (null when no finished book has a pull quote yet) */
+export function getBookQuote(): Promise<BookQuote | null> {
+  return request<BookQuote | null>('/books/quote')
+}
+
+/** The show's artwork as a duotone poster; 404 when it has none. */
+export function podcastPosterUrl(id: number): string {
+  return `${API_BASE}/podcasts/${encodeURIComponent(String(id))}/poster.png`
+}
+
 export function bookCoverUrl(id: number, v: string | number): string {
   return `${API_BASE}/books/${id}/cover.png?v=${encodeURIComponent(String(v))}`
 }
