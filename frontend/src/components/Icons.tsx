@@ -332,3 +332,41 @@ export function IconShuffle({ size = 14, className }: IconProps) {
     </svg>
   )
 }
+
+export function IconUpload({ size = 14, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 14 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M7 9.25v-7.5M4 4.75 7 1.75l3 3M2.25 11.75h9.5" />
+    </svg>
+  )
+}
+
+export function IconArrowLeft({ size = 14, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 14 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M11.25 7h-8.5M6.25 3.5 2.75 7l3.5 3.5" />
+    </svg>
+  )
+}

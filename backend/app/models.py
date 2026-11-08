@@ -120,6 +120,7 @@ class Book(SQLModel, table=True):
     review_fixed: int = 0  # ...of which were fixed by rewriting the section
     review_summary: str = ""
     narrator: str = ""  # display name of the speaker telling it in the first person ("" = narrator)
+    tense: str = "past"  # "past" (looking back) | "present" (as it happens)
     dir_path: str | None = None  # relative to data_dir
     error: str | None = None
     created_at: datetime = Field(default_factory=utcnow)

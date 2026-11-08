@@ -73,13 +73,28 @@ _VOICE_NARRATOR = """Editorial preset: MAGAZINE FEATURE (long-form).
 
 _VOICE_FIRST_PERSON = """Editorial preset: FIRST-PERSON RETELLING (long-form).
 - Voice: {name}, the {role} of this episode, tells the story of this conversation in the
-  first person ("I", "me", "my"), looking back on it as a long-form essay. Everyone else
-  ({others}) appears in the third person, by name.
+  first person ("I", "me", "my"), {frame}. Everyone else ({others}) appears in the third
+  person, by name.
 - My side of the story comes ONLY from {name}'s own lines in the transcript: what I asked,
   said, argued, shared or reacted to. Never invent memories, feelings, scenes, settings,
   backstory or opinions that {name} did not voice in this conversation.
 - Credit every idea to whoever said it. A point another speaker makes is theirs ("{other}
   argues that..."), never "I". A point I make in the episode can be told in my voice."""
+
+_FRAME = {
+    "past": "looking back on it as a long-form essay",
+    "present": "living it as it happens, in the present tense",
+}
+
+_TENSE_PRESENT = """\
+- Tense: PRESENT, live. Tell the conversation as it unfolds, moment by moment, so the
+  reader is in the room while it happens, the way watching the episode feels: "{example}"
+  Speech is reported in the present ("says", "asks", "pushes back", "laughs it off").
+- Nothing is known ahead of time: no hindsight or foreshadowing ("later", "would go on to",
+  "as it turned out", "looking back", "I remember", "that day"). What comes later in the
+  talk has not happened yet; let each turn land as it arrives.
+- The present tense comes from the telling, not from invented stage business: no gestures,
+  looks, rooms, clothes or weather that the conversation itself does not show."""
 
 _STYLE_BODY = """\
 - Story-driven: open sections with a concrete moment, question or tension from the talk;
@@ -105,19 +120,32 @@ _QUOTING_FIRST_PERSON = """
   quoted; when one is worth quoting, frame it as mine (as I put it, ⟦...⟧)."""
 
 
+def present_tense(ctx: dict[str, str]) -> bool:
+    return ctx.get("tense") == "present"
+
+
 def style(ctx: dict[str, str]) -> str:
     """Editorial style for the book's voice: a third-person narrator, or a speaker in the
-    first person (ctx["narrator"] is that speaker's display name)."""
+    first person (ctx["narrator"] is that speaker's display name), told looking back
+    (ctx["tense"] "past", the default) or as it happens ("present")."""
     name = ctx.get("narrator", "")
+    present = present_tense(ctx)
     if not name:
-        return f"{_VOICE_NARRATOR}\n{_STYLE_BODY}"
-    others = [s for s in ctx.get("speakers", "").split("|") if s and s != name]
-    voice = _VOICE_FIRST_PERSON.format(
-        name=name,
-        role=ctx.get("narrator_role") or "host",
-        others=" and ".join(others) or "the other speakers",
-        other=(others[0].split()[0] if others else "My guest"),
-    )
+        voice = _VOICE_NARRATOR
+        example = "Where does it start, the host asks. The guest has an answer ready: ..."
+    else:
+        others = [s for s in ctx.get("speakers", "").split("|") if s and s != name]
+        other = others[0].split()[0] if others else "My guest"
+        voice = _VOICE_FIRST_PERSON.format(
+            name=name,
+            role=ctx.get("narrator_role") or "host",
+            others=" and ".join(others) or "the other speakers",
+            other=other,
+            frame=_FRAME["present" if present else "past"],
+        )
+        example = f"Where does it start, I ask. {other} has an answer ready: ..."
+    if present:
+        voice += "\n" + _TENSE_PRESENT.format(example=example)
     return f"{voice}\n{_STYLE_BODY}"
 
 
@@ -457,6 +485,12 @@ def _review_messages(plan: Plan, written: dict[tuple[int, int], Written], transc
         if name
         else ""
     )
+    if present_tense(ctx):
+        voice_rule += (
+            "\nThe book is told in the present tense, as the conversation happens; that is"
+            ' intended. Report hindsight that gives away later parts of the talk ("later",'
+            ' "would go on to") and invented gestures or scenery as off_topic.'
+        )
     system = f"""You are the fact-checking editor of a long-form book written from a podcast
 conversation. Quotes in the draft have already been verified word for word; your job is the
 NARRATION around them. Compare every section with the transcript and report only real
@@ -759,6 +793,7 @@ def _assemble(plan: Plan, written: dict[tuple[int, int], Written], transcript, c
         closing=_closing(chapters, _verified(transcript, plan.closing, substantive=True)),
         demo=ctx.get("demo") == "1",
         narrator=ctx.get("narrator", ""),
+        tense=ctx.get("tense", "past"),
     )
 
 
@@ -837,6 +872,7 @@ def build_book(book_id: int, on_progress: ProgressFn) -> None:
             "description": episode.description or "",
             "demo": "1" if podcast.rss_url.startswith("demo://") else "0",
             "narrator": row.narrator or "",
+            "tense": "present" if row.tense == "present" else "past",
         }
     roles = speaker_roles(transcript, podcast.title)
     ctx["speakers"] = "|".join(name for _, name, _ in roles)

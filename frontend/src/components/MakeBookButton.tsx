@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { useCreateBook, useEstimateBook } from '../api/hooks'
-import type { BookEstimate } from '../api/types'
+import type { BookEstimate, BookTense } from '../api/types'
 import { fmtNumber, fmtUsd } from '../utils/format'
 import { ConfirmDialog } from './ConfirmDialog'
 import { IconBook } from './Icons'
@@ -17,6 +17,15 @@ interface MakeBookButtonProps {
 
 const NARRATOR = '' // radio value for the third-person narrator
 
+const TENSES: { value: BookTense; name: string; desc: string }[] = [
+  { value: 'past', name: 'Looking back', desc: 'Past tense, told after the conversation.' },
+  {
+    value: 'present',
+    name: 'As it happens',
+    desc: 'Present tense, like watching the episode unfold.',
+  },
+]
+
 /** Estimate, pick who tells it, confirm the cost, then start writing a long-form book. */
 export function MakeBookButton({ episodeId, disabledReason }: MakeBookButtonProps) {
   const navigate = useNavigate()
@@ -25,11 +34,13 @@ export function MakeBookButton({ episodeId, disabledReason }: MakeBookButtonProp
   const create = useCreateBook()
   const [est, setEst] = useState<BookEstimate | null>(null)
   const [voice, setVoice] = useState(NARRATOR)
+  const [tense, setTense] = useState<BookTense>('past')
   const [error, setError] = useState<string | null>(null)
 
   const open = () => {
     setError(null)
     setVoice(NARRATOR)
+    setTense('past')
     estimate.mutate(episodeId, {
       onSuccess: setEst,
       onError: (e) => setError(e instanceof ApiError ? e.detail : 'Could not estimate the book.'),
@@ -38,7 +49,7 @@ export function MakeBookButton({ episodeId, disabledReason }: MakeBookButtonProp
 
   const confirm = () => {
     create.mutate(
-      { episodeId, narrator: voice || null },
+      { episodeId, narrator: voice || null, tense },
       {
         onSuccess: () => {
           setEst(null)
@@ -106,7 +117,11 @@ export function MakeBookButton({ episodeId, disabledReason }: MakeBookButtonProp
               />
               <span className="voice-text">
                 <span className="voice-name">A narrator</span>
-                <span className="voice-desc">Third person, like a magazine feature.</span>
+                <span className="voice-desc">
+                  {tense === 'present'
+                    ? 'Third person, like live reportage from the room.'
+                    : 'Third person, like a magazine feature.'}
+                </span>
               </span>
             </label>
             {est.voices.map((v) => (
@@ -123,7 +138,9 @@ export function MakeBookButton({ episodeId, disabledReason }: MakeBookButtonProp
                     {v.name} <span className="voice-role">{v.role}</span>
                   </span>
                   <span className="voice-desc">
-                    First person, as {v.name.split(' ')[0]} looking back on the conversation.
+                    {tense === 'present'
+                      ? `First person, as ${v.name.split(' ')[0]} lives the conversation.`
+                      : `First person, as ${v.name.split(' ')[0]} looking back on the conversation.`}
                   </span>
                 </span>
               </label>
@@ -134,6 +151,28 @@ export function MakeBookButton({ episodeId, disabledReason }: MakeBookButtonProp
                 {est.voices.find((v) => v.label === voice)?.name}.
               </p>
             ) : null}
+          </fieldset>
+        ) : null}
+        {est ? (
+          <fieldset className="voice-picker" disabled={create.isPending}>
+            <legend className="voice-legend">When it is told</legend>
+            <div className="tense-options">
+              {TENSES.map((t) => (
+                <label className="voice-option" key={t.value}>
+                  <input
+                    type="radio"
+                    name="book-tense"
+                    value={t.value}
+                    checked={tense === t.value}
+                    onChange={() => setTense(t.value)}
+                  />
+                  <span className="voice-text">
+                    <span className="voice-name">{t.name}</span>
+                    <span className="voice-desc">{t.desc}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
           </fieldset>
         ) : null}
       </ConfirmDialog>

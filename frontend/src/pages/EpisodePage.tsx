@@ -906,7 +906,11 @@ export function EpisodePage() {
       <ConfirmDialog
         open={deleteConfirmOpen}
         title="Delete local episode data"
-        description={`Delete the local audio file, diarized transcript, summary, and indexed passages for "${episode.title}"? The episode entry from the RSS feed will remain so you can process it again later.`}
+        description={
+          episode.audio_url.startsWith('upload://')
+            ? `Delete the diarized transcript, summary, and indexed passages for "${episode.title}"? The uploaded audio file is kept so you can process it again later.`
+            : `Delete the local audio file, diarized transcript, summary, and indexed passages for "${episode.title}"? The episode entry from the RSS feed will remain so you can process it again later.`
+        }
         confirmLabel="Delete local data"
         danger
         busy={deleteDataMutation.isPending}

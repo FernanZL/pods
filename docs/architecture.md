@@ -78,7 +78,8 @@ Backends (`providers/transcription/`):
 | POST `/podcasts` | `PodcastCreate` | `PodcastOut` (201; 409 if exists; 422 if not a feed) | ingest |
 | POST `/podcasts/{id}/refresh` | | `PodcastOut` | ingest |
 | DELETE `/podcasts/{id}` | `?delete_files=true` | 204. Removes episodes, vectors, files | ingest |
-| GET `/episodes` | `podcast_id?, q?, search_description=false, status?, limit=50, offset=0` | `EpisodeList`, newest first | ingest |
+| GET `/episodes` | `podcast_id?, q?, search_description=false, status?, collected=false, limit=50, offset=0` | `EpisodeList`, newest first. `collected=true`: only episodes in the library (past "new", or with a queued/running job) | ingest |
+| POST `/episodes/upload` | multipart `file`, `title?`, `show?` (default "My uploads"), `description?` | `EpisodeOut` (201), status "downloaded"; 422 if not audio, 413 over 2 GB. The show is a Podcast with `rss_url` `upload://<slug>` (refresh → 409); "delete data" keeps the uploaded audio | ingest |
 | GET `/episodes/{id}` | | `EpisodeDetail` | ingest |
 | POST `/episodes/{id}/check` | | `TranscriptCheck`: re-run the transcript health check | ingest |
 | GET `/episodes/{id}/citations` | | `EpisodeCitationRef[]`: saved answers that cited this episode (transcript back-links) | ingest |
@@ -98,7 +99,7 @@ Backends (`providers/transcription/`):
 | GET `/podcasts/{id}/poster.png` | | the show's artwork as a 480px slate/marigold duotone (`services/artwork.py`, cached next to `artwork.img`); 404 without artwork | home |
 | GET `/books/quote` | | `BookQuote` or null: a verified pull quote from a ready book, rotating daily (the home page's staff pick) | home |
 | POST `/books/estimate` | `{episode_id}` | `BookEstimate` (chapters, target words, pages, USD, `voices`: speakers who can tell it, host first) | books |
-| POST `/books` | `{episode_id, narrator?}` | `BookOut` (201); queues a `book` job; 409 without a transcript; 422 if `narrator` (a voice's label or name) is not a main named speaker | books |
+| POST `/books` | `{episode_id, narrator?, tense="past"\|"present"}` | `BookOut` (201); queues a `book` job; 409 without a transcript; 422 if `narrator` (a voice's label or name) is not a main named speaker. `tense` "present" tells the book as the conversation happens instead of looking back | books |
 | GET `/books`, GET `/books/{id}` | | `BookOut[]` / `BookOut` (status, live progress) | books |
 | POST `/books/{id}/reshuffle` | | `BookOut`: new design seed, re-rendered, no model calls | books |
 | GET `/books/{id}/pdf` | `?download=true` | the PDF (inline or attachment) | books |

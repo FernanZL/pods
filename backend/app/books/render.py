@@ -239,6 +239,12 @@ def _contents(book: Book) -> str:
         )
     else:
         voice = "The narrative is written fresh; words in "
+    if book.tense == "present":
+        voice = voice.replace(
+            "The narrative is written fresh",
+            "The narrative is written fresh, in the present tense as the conversation happens,",
+            1,
+        )
     return (
         '<section class="contents"><h2>Contents</h2><ol class="toc">'
         + "".join(rows)

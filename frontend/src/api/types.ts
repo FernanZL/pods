@@ -97,6 +97,7 @@ export interface SelectionRequest {
   q?: string | null
   search_description?: boolean
   status?: EpisodeStatus | null
+  collected?: boolean // filter-based: only episodes already in the library
   steps?: Step[]
   force?: boolean
 }
@@ -229,6 +230,8 @@ export interface DiscoverGenre {
 
 // --- Books -----------------------------------------------------------------
 export type BookStatus = 'queued' | 'writing' | 'ready' | 'failed'
+/** 'past': told looking back on the conversation; 'present': told as it happens. */
+export type BookTense = 'past' | 'present'
 
 export interface Book {
   id: number
@@ -253,6 +256,7 @@ export interface Book {
   review_fixed: number
   review_summary: string
   narrator: string // speaker telling it in the first person ('' = narrator)
+  tense: BookTense
   cost_usd: number | null // measured API spend of the writing job
   error: string | null
   created_at: ISODate

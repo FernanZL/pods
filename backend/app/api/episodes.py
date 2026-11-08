@@ -1,17 +1,20 @@
 """Episode catalog, audio streaming, cost estimation, and pipeline action endpoints."""
 
+import mimetypes
 import shutil
+import uuid
 from contextlib import suppress
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 from sqlmodel import Session, col, select
 
 from app import storage
 from app.config import get_settings
-from app.db import get_session
+from app.db import get_session, session_scope
 from app.jobs.worker import create_jobs, job_to_out, matches_episode_query, worker
 from app.models import Conversation, Episode, Job, Message, Podcast
 from app.schemas import (
@@ -26,6 +29,7 @@ from app.schemas import (
     SelectionRequest,
     TranscriptCheck,
 )
+from app.services import uploads
 from app.services.estimate import estimate
 
 router = APIRouter()
@@ -42,6 +46,13 @@ def episode_status(episode: Episode) -> EpisodeStatus:
     if episode.downloaded_at is not None:
         return "downloaded"
     return "new"
+
+
+def is_collected(episode: Episode, active_jobs: dict[int, int]) -> bool:
+    """In the owner's library: some pipeline work done, or a job on its way."""
+    return episode_status(episode) != "new" or (
+        episode.id is not None and episode.id in active_jobs
+    )
 
 
 def _safe_data_path(rel_path: str | None) -> Path | None:
@@ -119,10 +130,14 @@ def list_episodes(
     q: str | None = None,
     search_description: bool = False,
     status: EpisodeStatus | None = None,
+    collected: bool = False,
     limit: Annotated[int, Query(ge=1, le=500)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> EpisodeList:
-    """List episodes newest first with keyword, podcast, and status filters."""
+    """List episodes newest first with keyword, podcast, and status filters.
+
+    `collected=true` keeps only episodes the owner has worked on: anything past "new"
+    (downloaded, transcribed, indexed) plus episodes with a queued or running job."""
     stmt = select(Episode)
     if podcast_id is not None:
         stmt = stmt.where(Episode.podcast_id == podcast_id)
@@ -137,6 +152,9 @@ def list_episodes(
         rows = [ep for ep in rows if matches_episode_query(ep, q, search_description)]
     if status is not None:
         rows = [ep for ep in rows if episode_status(ep) == status]
+    active_jobs = _active_jobs_by_episode(session)
+    if collected:
+        rows = [ep for ep in rows if is_collected(ep, active_jobs)]
 
     total = len(rows)
     page = rows[offset : offset + limit]
@@ -144,7 +162,6 @@ def list_episodes(
     podcast_titles = {
         p.id: p.title for p in session.exec(select(Podcast)).all() if p.id is not None
     }
-    active_jobs = _active_jobs_by_episode(session)
 
     items = [
         _episode_to_out(
@@ -175,6 +192,51 @@ def process_episodes(sel: SelectionRequest, session: SessionDep) -> list[JobOut]
         fresh = session.get(Job, job.id) or job
         out.append(job_to_out(session, fresh))
     return out
+
+
+@router.post("/episodes/upload", response_model=EpisodeOut, status_code=201)
+async def upload_episode(
+    file: Annotated[UploadFile, File()],
+    title: Annotated[str, Form()] = "",
+    show: Annotated[str, Form()] = "",
+    description: Annotated[str, Form()] = "",
+) -> EpisodeOut:
+    """Add an audio file from this computer as an episode, ready to process (no cost
+    until it is processed). It lands in a local show (`show`, default "My uploads")."""
+    filename = file.filename or ""
+    try:
+        uploads.audio_suffix(filename)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    staged = uploads.staging_dir() / f"{uuid.uuid4().hex}.part"
+    size = 0
+    try:
+        with staged.open("wb") as out:
+            while chunk := await file.read(1024 * 1024):
+                size += len(chunk)
+                if size > uploads.MAX_UPLOAD_BYTES:
+                    raise HTTPException(status_code=413, detail="The file is larger than 2 GB")
+                out.write(chunk)
+        if size == 0:
+            raise HTTPException(status_code=422, detail="The file is empty")
+        episode = await run_in_threadpool(
+            uploads.add_upload,
+            staged,
+            filename=filename,
+            title=title,
+            show=show,
+            description=description,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    finally:
+        staged.unlink(missing_ok=True)
+        await file.close()
+
+    with session_scope() as session:
+        podcast = session.get(Podcast, episode.podcast_id)
+        return _episode_to_out(episode, podcast.title if podcast else "", None)
 
 
 @router.get("/episodes/{episode_id}", response_model=EpisodeDetail)
@@ -242,9 +304,12 @@ def get_episode_audio(episode_id: int, session: SessionDep) -> FileResponse:
     audio_file = _safe_data_path(episode.audio_path)
     if audio_file is None or not audio_file.is_file():
         raise HTTPException(status_code=404, detail="Local audio file not found")
+    media_type = mimetypes.guess_type(audio_file.name)[0] or "audio/mpeg"
+    if not media_type.startswith(("audio/", "video/")):
+        media_type = "audio/mpeg"
     return FileResponse(
         path=audio_file,
-        media_type="audio/mpeg",
+        media_type=media_type,
         headers={"X-Content-Type-Options": "nosniff"},
     )
 
@@ -344,7 +409,11 @@ def delete_episode_data(episode_id: int, session: SessionDep) -> Response:
     podcast = session.get(Podcast, episode.podcast_id)
     podcast_slug = podcast.slug if podcast is not None else None
     ep_slug = episode.slug
-    rel_paths = [episode.audio_path, episode.transcript_path, episode.summary_path]
+    # An uploaded file is the episode's only source: keep it, reset everything derived.
+    keep_audio = uploads.is_upload(episode.audio_url) and episode.audio_path is not None
+    rel_paths = [episode.transcript_path, episode.summary_path]
+    if not keep_audio:
+        rel_paths.insert(0, episode.audio_path)
 
     active_jobs = session.exec(
         select(Job).where(
@@ -369,13 +438,24 @@ def delete_episode_data(episode_id: int, session: SessionDep) -> Response:
         podcasts_root = get_settings().podcasts_dir.resolve()
         ep_dir = (podcasts_root / podcast_slug / ep_slug).resolve()
         if ep_dir != podcasts_root and ep_dir.is_relative_to(podcasts_root):
-            shutil.rmtree(ep_dir, ignore_errors=True)
+            if not keep_audio:
+                shutil.rmtree(ep_dir, ignore_errors=True)
+            else:
+                audio_file = _safe_data_path(episode.audio_path)
+                for child in ep_dir.iterdir() if ep_dir.is_dir() else []:
+                    if audio_file is not None and child.resolve() == audio_file:
+                        continue
+                    if child.is_dir():
+                        shutil.rmtree(child, ignore_errors=True)
+                    else:
+                        child.unlink(missing_ok=True)
 
     session.expire_all()
     ep = session.get(Episode, episode_id)
     if ep is not None:
-        ep.audio_path = None
-        ep.downloaded_at = None
+        if not keep_audio:
+            ep.audio_path = None
+            ep.downloaded_at = None
         ep.transcript_path = None
         ep.transcribed_at = None
         ep.speakers = {}

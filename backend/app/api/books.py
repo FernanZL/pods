@@ -57,6 +57,7 @@ def _out(session: Session, book: Book) -> BookOut:
         review_fixed=book.review_fixed or 0,
         review_summary=book.review_summary or "",
         narrator=book.narrator or "",
+        tense="present" if book.tense == "present" else "past",
         cost_usd=job.cost_usd if job else None,
         error=book.error,
         created_at=book.created_at,
@@ -132,6 +133,7 @@ def create_book(body: BookCreate, session: SessionDep) -> BookOut:
         seed=new_seed(),
         title=episode.title,
         narrator=narrator,
+        tense=body.tense,
     )
     session.add(book)
     session.commit()

@@ -124,6 +124,7 @@ class SelectionRequest(BaseModel):
     q: str | None = None
     search_description: bool = False
     status: EpisodeStatus | None = None  # filter-based selection only
+    collected: bool = False  # filter-based: only episodes already in the library
     steps: list[Step] = Field(default_factory=lambda: ["download", "transcribe", "index"])
     force: bool = False  # re-run steps even if already completed
 
@@ -265,11 +266,16 @@ class DiscoverGenre(BaseModel):
 # --- Books ---------------------------------------------------------------------
 
 
+BookTense = Literal["past", "present"]
+
+
 class BookCreate(BaseModel):
     episode_id: int
     # Speaker (label or name from BookEstimate.voices) who tells the book in the first
     # person; None = a third-person narrator.
     narrator: str | None = None
+    # "past": told looking back on the conversation; "present": told as it happens.
+    tense: BookTense = "past"
 
 
 class BookVoice(BaseModel):
@@ -324,6 +330,7 @@ class BookOut(BaseModel):
     review_fixed: int
     review_summary: str
     narrator: str = ""  # speaker telling it in the first person ("" = narrator)
+    tense: BookTense = "past"
     cost_usd: float | None = None  # measured API spend of the writing job
     error: str | None
     created_at: datetime

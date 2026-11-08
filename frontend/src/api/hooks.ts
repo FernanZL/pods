@@ -41,10 +41,18 @@ import {
   reindexEpisode,
   retryJob,
   summarizeEpisode,
+  uploadEpisode,
   type EpisodesFilter,
   type JobsFilter,
+  type UploadEpisodeInput,
 } from './client'
-import type { ConversationPatch, EpisodeDetail, Job, SelectionRequest } from './types'
+import type {
+  BookTense,
+  ConversationPatch,
+  EpisodeDetail,
+  Job,
+  SelectionRequest,
+} from './types'
 
 export const queryKeys = {
   config: ['config'] as const,
@@ -204,6 +212,27 @@ export function useConversation(id: number | null) {
 
 // --- Mutations -------------------------------------------------------------
 
+/** Upload an audio file as an episode; `onProgress` reports the upload (0..1). */
+export function useUploadEpisode() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      input,
+      onProgress,
+      signal,
+    }: {
+      input: UploadEpisodeInput
+      onProgress?: (fraction: number) => void
+      signal?: AbortSignal
+    }) => uploadEpisode(input, onProgress, signal),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.podcasts })
+      void qc.invalidateQueries({ queryKey: queryKeys.episodesAll })
+      void qc.invalidateQueries({ queryKey: queryKeys.indexStats })
+    },
+  })
+}
+
 export function useAddPodcast() {
   const qc = useQueryClient()
   return useMutation({
@@ -360,8 +389,15 @@ export function useEstimateBook() {
 export function useCreateBook() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ episodeId, narrator }: { episodeId: number; narrator: string | null }) =>
-      createBook(episodeId, narrator),
+    mutationFn: ({
+      episodeId,
+      narrator,
+      tense = 'past',
+    }: {
+      episodeId: number
+      narrator: string | null
+      tense?: BookTense
+    }) => createBook(episodeId, narrator, tense),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.books })
       void qc.invalidateQueries({ queryKey: queryKeys.jobsAll })

@@ -2,6 +2,8 @@ import type {
   Book,
   BookEstimate,
   BookQuote,
+  BookTense,
+  Episode,
   TranscriptCheck,
   DiscoverGenre,
   DiscoverPodcast,
@@ -99,6 +101,8 @@ export interface EpisodesFilter {
   q?: string
   search_description?: boolean
   status?: EpisodeStatus | ''
+  /** Only episodes already in the library (worked on, or with a job on its way). */
+  collected?: boolean
   limit?: number
   offset?: number
 }
@@ -162,6 +166,9 @@ export function getEpisodes(filter?: EpisodesFilter): Promise<EpisodeList> {
     if (filter.status) {
       params.set('status', filter.status)
     }
+    if (filter.collected) {
+      params.set('collected', 'true')
+    }
     if (filter.limit !== undefined) {
       params.set('limit', String(filter.limit))
     }
@@ -171,6 +178,57 @@ export function getEpisodes(filter?: EpisodesFilter): Promise<EpisodeList> {
   }
   const qs = params.toString()
   return request<EpisodeList>(qs ? `/episodes?${qs}` : '/episodes')
+}
+
+export interface UploadEpisodeInput {
+  file: File
+  title?: string
+  show?: string
+  description?: string
+}
+
+/**
+ * POST /api/episodes/upload (multipart). Uses XHR rather than fetch so the caller can
+ * show upload progress for large audio files. `onProgress` gets 0..1.
+ */
+export function uploadEpisode(
+  input: UploadEpisodeInput,
+  onProgress?: (fraction: number) => void,
+  signal?: AbortSignal,
+): Promise<Episode> {
+  const form = new FormData()
+  form.append('file', input.file)
+  if (input.title?.trim()) form.append('title', input.title.trim())
+  if (input.show?.trim()) form.append('show', input.show.trim())
+  if (input.description?.trim()) form.append('description', input.description.trim())
+
+  return new Promise<Episode>((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', `${API_BASE}/episodes/upload`)
+    xhr.setRequestHeader('Accept', 'application/json')
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total)
+    }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText) as Episode)
+        } catch {
+          reject(new ApiError(xhr.status, 'The server sent an unreadable response.'))
+        }
+        return
+      }
+      const res = new Response(xhr.responseText || null, {
+        status: xhr.status,
+        statusText: xhr.statusText,
+      })
+      void extractErrorDetail(res).then((detail) => reject(new ApiError(xhr.status, detail)))
+    }
+    xhr.onerror = () => reject(new ApiError(0, 'The upload could not reach the server.'))
+    xhr.onabort = () => reject(new ApiError(0, 'Upload cancelled.'))
+    signal?.addEventListener('abort', () => xhr.abort(), { once: true })
+    xhr.send(form)
+  })
 }
 
 /** GET /api/episodes/{id} */
@@ -278,11 +336,15 @@ export function estimateBook(episodeId: number): Promise<BookEstimate> {
   })
 }
 
-export function createBook(episodeId: number, narrator: string | null = null): Promise<Book> {
+export function createBook(
+  episodeId: number,
+  narrator: string | null = null,
+  tense: BookTense = 'past',
+): Promise<Book> {
   return request<Book>('/books', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ episode_id: episodeId, narrator }),
+    body: JSON.stringify({ episode_id: episodeId, narrator, tense }),
   })
 }
 

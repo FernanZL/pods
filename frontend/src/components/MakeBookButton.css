@@ -83,3 +83,9 @@
     transition: none;
   }
 }
+
+.tense-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--s-2);
+}

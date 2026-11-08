@@ -4,7 +4,7 @@ import { useAddPodcast, useDirectorySearch, useDiscoverGenres, useTopPodcasts } 
 import type { DiscoverPodcast, Podcast } from '../api/types'
 import { fmtNumber } from '../utils/format'
 import { ErrorBanner } from './ErrorBanner'
-import { IconCheck, IconPlus, IconSearch } from './Icons'
+import { IconCheck, IconPlus, IconSearch, IconUpload } from './Icons'
 import { Skeleton, Spinner } from './Spinner'
 import './BrowsePodcasts.css'
 
@@ -12,6 +12,8 @@ interface BrowsePodcastsProps {
   /** Called after a podcast is added (or when "In library" is chosen). */
   onOpenInLibrary: (podcastId: number) => void
   onAdded: (podcast: Podcast) => void
+  /** Open the upload dialog (audio files that are not in any feed). */
+  onUpload: () => void
 }
 
 /**
@@ -19,7 +21,7 @@ interface BrowsePodcastsProps {
  * name, or browse top charts by genre, and add one in a click. Pasting an RSS URL
  * remains as a fallback for shows that are not listed.
  */
-export function BrowsePodcasts({ onOpenInLibrary, onAdded }: BrowsePodcastsProps) {
+export function BrowsePodcasts({ onOpenInLibrary, onAdded, onUpload }: BrowsePodcastsProps) {
   const [query, setQuery] = useState('')
   const [debounced, setDebounced] = useState('')
   const [genreId, setGenreId] = useState<number | null>(null)
@@ -181,6 +183,19 @@ export function BrowsePodcasts({ onOpenInLibrary, onAdded }: BrowsePodcastsProps
           </button>
         </div>
       </form>
+
+      <div className="browse-rss browse-upload">
+        <span className="browse-rss-label">Have an audio file instead?</span>
+        <div className="browse-rss-row">
+          <span className="browse-upload-note">
+            Upload a recording from this computer and process it like any episode.
+          </span>
+          <button type="button" className="btn btn-sm" onClick={onUpload}>
+            <IconUpload size={12} />
+            <span>Upload audio</span>
+          </button>
+        </div>
+      </div>
     </section>
   )
 }

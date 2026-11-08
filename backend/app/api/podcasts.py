@@ -113,6 +113,8 @@ def refresh_podcast(podcast_id: int, session: SessionDep) -> PodcastOut:
     podcast = session.get(Podcast, podcast_id)
     if podcast is None:
         raise HTTPException(status_code=404, detail="Podcast not found")
+    if podcast.rss_url.startswith("upload://"):
+        raise HTTPException(status_code=409, detail="Uploaded files have no feed to refresh")
 
     try:
         sync_podcast(podcast.rss_url)

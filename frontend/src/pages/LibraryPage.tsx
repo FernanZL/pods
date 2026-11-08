@@ -14,6 +14,7 @@ import {
 } from '../api/hooks'
 import type {
   CostEstimate,
+  Episode,
   EpisodeStatus,
   Job,
   Podcast,
@@ -24,11 +25,20 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CostConfirmDialog } from '../components/CostConfirmDialog'
 import { EmptyState } from '../components/EmptyState'
 import { ErrorBanner } from '../components/ErrorBanner'
-import { IconPlus, IconRefresh, IconSearch, IconTrash } from '../components/Icons'
+import {
+  IconArrowLeft,
+  IconPlus,
+  IconRefresh,
+  IconSearch,
+  IconTrash,
+  IconUpload,
+} from '../components/Icons'
 import { Skeleton, Spinner } from '../components/Spinner'
 import { StatusStamp } from '../components/StatusStamp'
 import { useToast } from '../components/ToastContext'
+import { UploadDialog } from '../components/UploadDialog'
 import { fmtDate, fmtDuration, fmtEpNumber, fmtNumber } from '../utils/format'
+import { isUploadShow } from '../utils/podcasts'
 import { buildSpeakerColorMap, getSpeakerColor } from '../utils/speakers'
 import './LibraryPage.css'
 
@@ -50,14 +60,33 @@ export function LibraryPage() {
   const [refreshingId, setRefreshingId] = useState<number | null>(null)
   const [deletingPodcast, setDeletingPodcast] = useState<Podcast | null>(null)
 
+  // Views: "Your library" (episodes already collected), one show's full catalog
+  // (?show=<id>, where new episodes are picked), and "Browse podcasts" (?tab=browse).
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = searchParams.get('tab') === 'browse' ? 'browse' : 'library'
+  const showParam = Number(searchParams.get('show'))
+  const showId = tab === 'library' && Number.isInteger(showParam) && showParam > 0 ? showParam : null
+  const catalog = showId !== null
+  const catalogPodcast = catalog ? podcasts?.find((p) => p.id === showId) : undefined
   const setTab = (next: 'library' | 'browse') => {
     const params = new URLSearchParams(searchParams)
     if (next === 'browse') params.set('tab', 'browse')
     else params.delete('tab')
+    params.delete('show')
     setSearchParams(params, { replace: true })
   }
+  const openShow = (id: number) => {
+    const params = new URLSearchParams(searchParams)
+    params.delete('tab')
+    params.set('show', String(id))
+    setSearchParams(params)
+  }
+  const closeShow = () => {
+    const params = new URLSearchParams(searchParams)
+    params.delete('show')
+    setSearchParams(params)
+  }
+  const [uploadOpen, setUploadOpen] = useState(false)
   const refreshPodcast = useRefreshPodcast()
   const deletePodcast = useDeletePodcast()
 
@@ -85,6 +114,16 @@ export function LibraryPage() {
   const estimateMutation = useEstimateEpisodes()
   const processMutation = useProcessEpisodes()
 
+  // Switching between the library and a show's catalog starts from a clean slate.
+  const [viewShowId, setViewShowId] = useState(showId)
+  if (viewShowId !== showId) {
+    setViewShowId(showId)
+    setPage(0)
+    setSelectedIds(new Set())
+    setAllMatchingSelected(false)
+    setStatusFilter('')
+  }
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedQ(searchInput.trim())
@@ -96,14 +135,15 @@ export function LibraryPage() {
 
   const episodesFilter = useMemo(
     () => ({
-      podcast_id: podcastFilter,
+      podcast_id: catalog ? showId : podcastFilter,
       q: debouncedQ || undefined,
       search_description: searchDesc,
       status: statusFilter,
+      collected: !catalog,
       limit: PAGE_SIZE,
       offset: page * PAGE_SIZE,
     }),
-    [debouncedQ, page, podcastFilter, searchDesc, statusFilter],
+    [catalog, debouncedQ, page, podcastFilter, searchDesc, showId, statusFilter],
   )
 
   const {
@@ -180,6 +220,9 @@ export function LibraryPage() {
           if (podcastFilter === target.id) {
             setPodcastFilter(null)
           }
+          if (showId === target.id) {
+            closeShow()
+          }
           clearSelection()
           pushToast({ message: `Removed "${target.title}".` })
         },
@@ -244,10 +287,11 @@ export function LibraryPage() {
   const buildSelection = (): SelectionRequest => {
     if (allMatchingSelected) {
       return {
-        podcast_id: podcastFilter,
+        podcast_id: catalog ? showId : podcastFilter,
         q: debouncedQ || null,
         search_description: searchDesc,
         status: statusFilter || null,
+        collected: !catalog,
       }
     }
     return {
@@ -255,7 +299,7 @@ export function LibraryPage() {
     }
   }
 
-  const runEstimate = async () => {
+  const runEstimate = async (selection?: SelectionRequest) => {
     setCostDialogOpen(true)
     setEstimateData(null)
     setEstimateErr(null)
@@ -263,7 +307,7 @@ export function LibraryPage() {
     setResolvingSelection(true)
 
     try {
-      const sel = buildSelection()
+      const sel = selection ?? buildSelection()
       setPendingSelection(sel)
       setResolvingSelection(false)
       const est = await estimateMutation.mutateAsync(sel)
@@ -297,6 +341,18 @@ export function LibraryPage() {
     })
   }
 
+  const handleUploaded = (episode: Episode) => {
+    setUploadOpen(false)
+    pushToast({
+      message: `Uploaded "${episode.title}" to ${episode.podcast_title}.`,
+      action: { label: 'Open', to: `/episodes/${episode.id}` },
+    })
+    if (tab === 'browse' || catalog) setTab('library')
+    // Straight to the cost check, so the file can be transcribed and indexed now.
+    void runEstimate({ episode_ids: [episode.id] })
+  }
+
+  const filtersActive = Boolean(debouncedQ) || statusFilter !== '' || podcastFilter !== null
   const totalPages = Math.max(1, Math.ceil(totalMatching / PAGE_SIZE))
   const rangeStart = totalMatching === 0 ? 0 : page * PAGE_SIZE + 1
   const rangeEnd = Math.min(totalMatching, (page + 1) * PAGE_SIZE)
@@ -306,7 +362,7 @@ export function LibraryPage() {
       <div className="page-header">
         <h1 className="page-title">Library</h1>
         <span className="library-header-note">
-          Find podcasts, select episodes, confirm the estimated cost, and index locally.
+          Episodes you have collected. Open a show to pick more, find new podcasts, or upload a file.
         </span>
       </div>
 
@@ -336,33 +392,90 @@ export function LibraryPage() {
 
       {tab === 'browse' ? (
         <BrowsePodcasts
-          onOpenInLibrary={(id) => {
-            setPodcastFilter(id)
-            setPage(0)
-            setTab('library')
-          }}
+          onOpenInLibrary={(id) => openShow(id)}
           onAdded={(created) => {
             pushToast({
-              message: `Added "${created.title}" (${fmtNumber(created.episode_count)} episodes).`,
+              message: `Added "${created.title}" (${fmtNumber(created.episode_count)} episodes). Pick the ones to process.`,
             })
-            setPodcastFilter(created.id)
-            setPage(0)
-            setTab('library')
+            openShow(created.id)
           }}
+          onUpload={() => setUploadOpen(true)}
         />
       ) : (
       <>
-      {/* Podcast feeds module */}
+      {catalog ? (
+        /* One show's full catalog: where new episodes are picked for the library */
+        <section className="library-catalog-head" aria-labelledby="catalog-heading">
+          <button type="button" className="btn btn-ghost btn-sm library-back" onClick={closeShow}>
+            <IconArrowLeft size={13} />
+            <span>Your library</span>
+          </button>
+          <div className="library-catalog-bar">
+            <div className="library-catalog-title">
+              <h2 id="catalog-heading" className="library-catalog-name">
+                {catalogPodcast?.title ?? (podcastsLoading ? 'Loading…' : 'Show not found')}
+              </h2>
+              {catalogPodcast ? (
+                <span className="library-feed-meta">
+                  {isUploadShow(catalogPodcast)
+                    ? `${fmtNumber(catalogPodcast.episode_count)} uploaded ${catalogPodcast.episode_count === 1 ? 'file' : 'files'}`
+                    : `${fmtNumber(catalogPodcast.episode_count)} episodes in the feed · Refreshed ${fmtDate(catalogPodcast.refreshed_at)}`}
+                  {' · '}
+                  {fmtNumber(catalogPodcast.indexed_count)} indexed
+                </span>
+              ) : null}
+            </div>
+            {catalogPodcast ? (
+              <div className="library-feed-actions">
+                {isUploadShow(catalogPodcast) ? (
+                  <button type="button" className="btn btn-sm" onClick={() => setUploadOpen(true)}>
+                    <IconUpload size={13} />
+                    <span>Upload another</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    disabled={refreshingId === catalogPodcast.id && refreshPodcast.isPending}
+                    onClick={() => handleRefreshPodcast(catalogPodcast)}
+                  >
+                    {refreshingId === catalogPodcast.id && refreshPodcast.isPending ? (
+                      <Spinner size={12} label="Refreshing" />
+                    ) : (
+                      <IconRefresh size={13} />
+                    )}
+                    <span>Refresh</span>
+                  </button>
+                )}
+              </div>
+            ) : null}
+          </div>
+          {feedError ? (
+            <ErrorBanner
+              message="Feed action failed."
+              recovery={feedError}
+              onDismiss={() => setFeedError(null)}
+            />
+          ) : null}
+        </section>
+      ) : (
+      /* Shows the owner follows; each opens its full catalog */
       <section className="library-feeds-section" aria-labelledby="feeds-heading">
         <div className="library-feeds-bar">
           <h2 id="feeds-heading" className="library-section-heading">
-            Podcast feeds
+            Your shows
           </h2>
 
-          <button type="button" className="btn btn-sm btn-primary" onClick={() => setTab('browse')}>
-            <IconPlus size={12} />
-            <span>Find podcasts</span>
-          </button>
+          <div className="library-feed-actions">
+            <button type="button" className="btn btn-sm" onClick={() => setUploadOpen(true)}>
+              <IconUpload size={12} />
+              <span>Upload audio</span>
+            </button>
+            <button type="button" className="btn btn-sm btn-primary" onClick={() => setTab('browse')}>
+              <IconPlus size={12} />
+              <span>Find podcasts</span>
+            </button>
+          </div>
         </div>
 
         {feedError ? (
@@ -386,44 +499,54 @@ export function LibraryPage() {
         ) : !podcasts || podcasts.length === 0 ? (
           <div className="library-feeds-empty">
             <p>
-              No podcasts yet. Use <strong>Find podcasts</strong> to search the directory by
-              name (for example Huberman Lab) and add one in a click.
+              No shows yet. Use <strong>Find podcasts</strong> to search the directory by name
+              (for example Huberman Lab), or <strong>Upload audio</strong> to add a file from
+              this computer.
             </p>
           </div>
         ) : (
           <ul className="library-feed-list">
             {podcasts.map((p) => {
               const isRefreshing = refreshingId === p.id && refreshPodcast.isPending
-              const isFiltered = podcastFilter === p.id
+              const upload = isUploadShow(p)
               return (
                 <li key={p.id} className="library-feed-row">
                   <div className="library-feed-main">
                     <button
                       type="button"
-                      className={`library-feed-title-btn ${isFiltered ? 'library-feed-title-btn--on' : ''}`.trim()}
-                      onClick={() => {
-                        setPodcastFilter((prev) => (prev === p.id ? null : p.id))
-                        setPage(0)
-                        setAllMatchingSelected(false)
-                      }}
+                      className="library-feed-title-btn"
+                      onClick={() => openShow(p.id)}
                     >
                       {p.title}
                     </button>
                     <span className="library-feed-meta">
-                      {fmtNumber(p.episode_count)} episodes · {fmtNumber(p.indexed_count)} indexed ·
-                      Refreshed {fmtDate(p.refreshed_at)}
+                      {upload
+                        ? `${fmtNumber(p.episode_count)} uploaded ${p.episode_count === 1 ? 'file' : 'files'}`
+                        : `${fmtNumber(p.episode_count)} episodes`}{' '}
+                      · {fmtNumber(p.indexed_count)} indexed
+                      {upload ? '' : ` · Refreshed ${fmtDate(p.refreshed_at)}`}
                     </span>
                   </div>
                   <div className="library-feed-actions">
-                    <button
-                      type="button"
-                      className="btn btn-sm"
-                      disabled={isRefreshing}
-                      onClick={() => handleRefreshPodcast(p)}
-                    >
-                      {isRefreshing ? <Spinner size={12} label="Refreshing" /> : <IconRefresh size={13} />}
-                      <span>Refresh</span>
+                    <button type="button" className="btn btn-sm" onClick={() => openShow(p.id)}>
+                      <span>{upload ? 'Files' : 'Browse episodes'}</span>
                     </button>
+                    {upload ? null : (
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        disabled={isRefreshing}
+                        onClick={() => handleRefreshPodcast(p)}
+                        aria-label={`Refresh ${p.title}`}
+                      >
+                        {isRefreshing ? (
+                          <Spinner size={12} label="Refreshing" />
+                        ) : (
+                          <IconRefresh size={13} />
+                        )}
+                        <span>Refresh</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm library-feed-remove"
@@ -440,39 +563,42 @@ export function LibraryPage() {
           </ul>
         )}
       </section>
+      )}
 
-      {/* Episode browser */}
+      {/* Episodes: the collected library, or the open show's catalog */}
       <section className="library-episodes-section" aria-labelledby="episodes-heading">
         <div className="library-filters-bar">
           <h2 id="episodes-heading" className="library-section-heading">
-            Episodes
+            {catalog ? 'All episodes' : 'Your episodes'}
             <span className="library-total-count">{fmtNumber(totalMatching)}</span>
           </h2>
 
           <div className="library-filters-controls">
-            <div className="library-filter-item">
-              <label htmlFor="filter-podcast" className="sr-only">
-                Filter by podcast
-              </label>
-              <select
-                id="filter-podcast"
-                className="select select-sm"
-                value={podcastFilter ?? ''}
-                onChange={(e) => {
-                  const val = e.target.value
-                  setPodcastFilter(val ? Number(val) : null)
-                  setPage(0)
-                  setAllMatchingSelected(false)
-                }}
-              >
-                <option value="">All podcasts</option>
-                {podcasts?.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {catalog ? null : (
+              <div className="library-filter-item">
+                <label htmlFor="filter-podcast" className="sr-only">
+                  Filter by show
+                </label>
+                <select
+                  id="filter-podcast"
+                  className="select select-sm"
+                  value={podcastFilter ?? ''}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setPodcastFilter(val ? Number(val) : null)
+                    setPage(0)
+                    setAllMatchingSelected(false)
+                  }}
+                >
+                  <option value="">All shows</option>
+                  {podcasts?.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="library-search-wrap">
               <IconSearch size={14} className="library-search-icon" />
@@ -518,7 +644,7 @@ export function LibraryPage() {
                 }}
               >
                 <option value="">All statuses</option>
-                <option value="new">New</option>
+                {catalog ? <option value="new">Not processed</option> : null}
                 <option value="downloaded">Downloaded</option>
                 <option value="transcribed">Transcribed</option>
                 <option value="indexed">Indexed</option>
@@ -526,6 +652,13 @@ export function LibraryPage() {
             </div>
           </div>
         </div>
+
+        {catalog && catalogPodcast && !isUploadShow(catalogPodcast) ? (
+          <p className="library-catalog-hint">
+            Tick the episodes you want and process them. They join your library as soon as they
+            are queued.
+          </p>
+        ) : null}
 
         {/* Selection action bar */}
         {selectedCount > 0 ? (
@@ -573,14 +706,40 @@ export function LibraryPage() {
             <Skeleton height="38px" />
           </div>
         ) : pageItems.length === 0 ? (
-          <EmptyState
-            title={podcasts && podcasts.length > 0 ? 'No matching episodes' : 'No episodes in library'}
-            description={
-              podcasts && podcasts.length > 0
-                ? 'Adjust your search query or filters to see episodes.'
-                : 'Add a podcast RSS feed above to import its episode catalog.'
-            }
-          />
+          catalog || filtersActive ? (
+            <EmptyState
+              title="No matching episodes"
+              description={
+                catalog && !filtersActive
+                  ? 'This show has no episodes yet. Try refreshing its feed.'
+                  : 'Adjust your search query or filters to see episodes.'
+              }
+            />
+          ) : (
+            <EmptyState
+              title={
+                podcasts && podcasts.length > 0
+                  ? 'No episodes in your library yet'
+                  : 'Your library is empty'
+              }
+              description={
+                podcasts && podcasts.length > 0
+                  ? 'Open one of your shows above to browse its episodes, then process the ones you want. They appear here once they are downloaded.'
+                  : 'Find a podcast or upload an audio file, then pick the episodes to process.'
+              }
+              action={
+                podcasts && podcasts.length === 1 ? (
+                  <button type="button" className="btn btn-primary" onClick={() => openShow(podcasts[0].id)}>
+                    Browse {podcasts[0].title}
+                  </button>
+                ) : podcasts && podcasts.length > 1 ? null : (
+                  <button type="button" className="btn btn-primary" onClick={() => setTab('browse')}>
+                    Find podcasts
+                  </button>
+                )
+              }
+            />
+          )
         ) : (
           <>
             <div className="table-wrap">
@@ -639,7 +798,7 @@ export function LibraryPage() {
                             {ep.title}
                           </Link>
                           <span className="library-ep-sub">
-                            {podcasts && podcasts.length > 1 ? `${ep.podcast_title} · ` : ''}
+                            {!catalog && podcasts && podcasts.length > 1 ? `${ep.podcast_title} · ` : ''}
                             {fmtDate(ep.published)}
                           </span>
                           <span className="library-ep-mobile-meta">
@@ -745,6 +904,13 @@ export function LibraryPage() {
       </>
       )}
 
+      <UploadDialog
+        open={uploadOpen}
+        podcasts={podcasts}
+        onClose={() => setUploadOpen(false)}
+        onUploaded={handleUploaded}
+      />
+
       <CostConfirmDialog
         open={costDialogOpen}
         config={config}
@@ -753,7 +919,7 @@ export function LibraryPage() {
         estimateError={estimateErr}
         submitting={processMutation.isPending}
         submitError={processErr}
-        onRetryEstimate={() => void runEstimate()}
+        onRetryEstimate={() => void runEstimate(pendingSelection ?? undefined)}
         onConfirm={handleConfirmProcess}
         onClose={() => {
           if (!processMutation.isPending) {
@@ -764,13 +930,13 @@ export function LibraryPage() {
 
       <ConfirmDialog
         open={deletingPodcast !== null}
-        title="Remove podcast feed"
+        title="Remove show"
         description={
           deletingPodcast
             ? `Remove "${deletingPodcast.title}" and delete its ${fmtNumber(deletingPodcast.episode_count)} episodes, indexed passages, and local files?`
             : ''
         }
-        confirmLabel="Remove feed"
+        confirmLabel="Remove show"
         danger
         busy={deletePodcast.isPending}
         onConfirm={handleConfirmDeletePodcast}

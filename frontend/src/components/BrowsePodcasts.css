@@ -193,6 +193,23 @@
   min-width: 0;
 }
 
+.browse-upload {
+  margin-top: 0;
+  border-top: none;
+  padding-top: 0;
+}
+
+.browse-upload .browse-rss-row {
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.browse-upload-note {
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+}
+
 @media (max-width: 767px) {
   .browse-grid {
     grid-template-columns: minmax(0, 1fr);

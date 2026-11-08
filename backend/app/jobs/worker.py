@@ -90,6 +90,11 @@ def resolve_selection(session: Session, sel: SelectionRequest) -> list[Episode]:
         from app.api.episodes import episode_status
 
         rows = [ep for ep in rows if episode_status(ep) == sel.status]
+    if sel.collected:
+        from app.api.episodes import _active_jobs_by_episode, is_collected
+
+        active = _active_jobs_by_episode(session)
+        rows = [ep for ep in rows if is_collected(ep, active)]
     return rows
 
 

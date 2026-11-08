@@ -40,6 +40,14 @@ def download_episode(
                 on_progress(1.0, "Audio already downloaded")
                 return existing
 
+        if episode.audio_url.startswith("upload://"):
+            # An uploaded file has nowhere to be downloaded from, even when forced.
+            existing = storage.to_abs(episode.audio_path) if episode.audio_path else None
+            if existing is not None and existing.is_file():
+                on_progress(1.0, "Using the uploaded audio")
+                return existing
+            raise ValueError("The uploaded audio file is missing. Upload it again.")
+
         ep_dir = storage.episode_dir(podcast, episode)
         audio_url = episode.audio_url
 
