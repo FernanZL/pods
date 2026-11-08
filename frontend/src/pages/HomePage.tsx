@@ -332,7 +332,12 @@ function BookRack({ books }: { books: Book[] }) {
             <img src={bookCoverUrl(b.id, `${b.seed}`)} alt={`Cover of ${b.title}`} loading="lazy" />
             <b>{b.title}</b>
             <span>
-              {b.narrator ? `Told by ${b.narrator}` : 'Narrated'} · {plural(b.pages, 'page')}
+              {b.form === 'book' && b.narrator
+                ? `In ${b.narrator}'s voice`
+                : b.narrator
+                  ? `Told by ${b.narrator}`
+                  : 'Narrated'}{' '}
+              · {plural(b.pages, 'page')}
             </span>
           </a>
         </li>

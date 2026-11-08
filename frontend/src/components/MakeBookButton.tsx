@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { useCreateBook, useEstimateBook } from '../api/hooks'
-import type { BookEstimate, BookTense } from '../api/types'
+import type { BookEstimate, BookForm, BookTense } from '../api/types'
 import { fmtNumber, fmtUsd } from '../utils/format'
 import { ConfirmDialog } from './ConfirmDialog'
 import { IconBook } from './Icons'
@@ -17,14 +17,26 @@ interface MakeBookButtonProps {
 
 const NARRATOR = '' // radio value for the third-person narrator
 
-const TENSES: { value: BookTense; name: string; desc: string }[] = [
-  { value: 'past', name: 'Looking back', desc: 'Past tense, told after the conversation.' },
-  {
-    value: 'present',
-    name: 'As it happens',
-    desc: 'Present tense, like watching the episode unfold.',
-  },
+/** How the book reads: the speaker's own book, or a retelling of the conversation. */
+type Telling = 'book' | 'past' | 'present'
+
+const RETELLINGS: { value: Telling; name: string; desc: string }[] = [
+  { value: 'past', name: 'Retelling, looking back', desc: 'The conversation, told after it.' },
+  { value: 'present', name: 'Retelling, as it happens', desc: 'The conversation, told live.' },
 ]
+
+function asRequest(telling: Telling): { form: BookForm; tense: BookTense } {
+  return {
+    form: telling === 'book' ? 'book' : 'retelling',
+    tense: telling === 'present' ? 'present' : 'past',
+  }
+}
+
+/** "Andrew Huberman" -> "Andrew"; "Dr. K (Alok Kanojia)" -> "Dr. K". */
+function shortName(name: string): string {
+  const words = name.replace(/\s*\(.*?\)/g, '').trim().split(/\s+/)
+  return words[0]?.endsWith('.') && words.length > 1 ? `${words[0]} ${words[1]}` : words[0] ?? name
+}
 
 /** Estimate, pick who tells it, confirm the cost, then start writing a long-form book. */
 export function MakeBookButton({ episodeId, disabledReason }: MakeBookButtonProps) {
@@ -34,22 +46,26 @@ export function MakeBookButton({ episodeId, disabledReason }: MakeBookButtonProp
   const create = useCreateBook()
   const [est, setEst] = useState<BookEstimate | null>(null)
   const [voice, setVoice] = useState(NARRATOR)
-  const [tense, setTense] = useState<BookTense>('past')
+  const [telling, setTelling] = useState<Telling>('book')
   const [error, setError] = useState<string | null>(null)
 
   const open = () => {
     setError(null)
-    setVoice(NARRATOR)
-    setTense('past')
     estimate.mutate(episodeId, {
-      onSuccess: setEst,
+      onSuccess: (data) => {
+        // Default: the host's own book (the speaker listed first); else a narrated retelling.
+        const first = data.voices[0]?.label ?? NARRATOR
+        setVoice(first)
+        setTelling(first ? 'book' : 'past')
+        setEst(data)
+      },
       onError: (e) => setError(e instanceof ApiError ? e.detail : 'Could not estimate the book.'),
     })
   }
 
   const confirm = () => {
     create.mutate(
-      { episodeId, narrator: voice || null, tense },
+      { episodeId, narrator: voice || null, ...asRequest(telling) },
       {
         onSuccess: () => {
           setEst(null)
@@ -63,6 +79,23 @@ export function MakeBookButton({ episodeId, disabledReason }: MakeBookButtonProp
       },
     )
   }
+
+  const pickVoice = (next: string) => {
+    if (!next && telling === 'book') setTelling('past')
+    if (next && !voice) setTelling('book')
+    setVoice(next)
+  }
+  const author = est?.voices.find((v) => v.label === voice)
+  const tellings: { value: Telling; name: string; desc: string }[] = author
+    ? [
+        {
+          value: 'book',
+          name: `${shortName(author.name)}'s own book`,
+          desc: `Written to you, like a book ${shortName(author.name)} wrote on the subject.`,
+        },
+        ...RETELLINGS,
+      ]
+    : RETELLINGS
 
   const cost = est
     ? est.llm_usd > 0
@@ -113,15 +146,11 @@ export function MakeBookButton({ episodeId, disabledReason }: MakeBookButtonProp
                 name="book-voice"
                 value={NARRATOR}
                 checked={voice === NARRATOR}
-                onChange={() => setVoice(NARRATOR)}
+                onChange={() => pickVoice(NARRATOR)}
               />
               <span className="voice-text">
                 <span className="voice-name">A narrator</span>
-                <span className="voice-desc">
-                  {tense === 'present'
-                    ? 'Third person, like live reportage from the room.'
-                    : 'Third person, like a magazine feature.'}
-                </span>
+                <span className="voice-desc">Third person, like a magazine feature.</span>
               </span>
             </label>
             {est.voices.map((v) => (
@@ -131,40 +160,36 @@ export function MakeBookButton({ episodeId, disabledReason }: MakeBookButtonProp
                   name="book-voice"
                   value={v.label}
                   checked={voice === v.label}
-                  onChange={() => setVoice(v.label)}
+                  onChange={() => pickVoice(v.label)}
                 />
                 <span className="voice-text">
                   <span className="voice-name">
                     {v.name} <span className="voice-role">{v.role}</span>
                   </span>
-                  <span className="voice-desc">
-                    {tense === 'present'
-                      ? `First person, as ${v.name.split(' ')[0]} lives the conversation.`
-                      : `First person, as ${v.name.split(' ')[0]} looking back on the conversation.`}
-                  </span>
+                  <span className="voice-desc">First person, in {shortName(v.name)}'s voice.</span>
                 </span>
               </label>
             ))}
-            {voice ? (
+            {author ? (
               <p className="voice-note">
                 The PDF notes that the voice is written by AI from the episode, not by{' '}
-                {est.voices.find((v) => v.label === voice)?.name}.
+                {author.name}.
               </p>
             ) : null}
           </fieldset>
         ) : null}
         {est ? (
           <fieldset className="voice-picker" disabled={create.isPending}>
-            <legend className="voice-legend">When it is told</legend>
+            <legend className="voice-legend">How it reads</legend>
             <div className="tense-options">
-              {TENSES.map((t) => (
+              {tellings.map((t) => (
                 <label className="voice-option" key={t.value}>
                   <input
                     type="radio"
-                    name="book-tense"
+                    name="book-telling"
                     value={t.value}
-                    checked={tense === t.value}
-                    onChange={() => setTense(t.value)}
+                    checked={telling === t.value}
+                    onChange={() => setTelling(t.value)}
                   />
                   <span className="voice-text">
                     <span className="voice-name">{t.name}</span>

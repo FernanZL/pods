@@ -24,6 +24,8 @@ from app.config import get_settings
 from app.domain import ChatMessage, Transcript
 from app.models import Episode, Podcast, utcnow
 from app.providers import get_llm
+from app.services.transcribe import unify_speakers
+from app.services.uploads import show_label
 
 log = logging.getLogger(__name__)
 
@@ -183,11 +185,15 @@ def run_check(episode_id: int, *, names: bool = True) -> dict[str, Any]:
         path = storage.to_abs(ep.transcript_path)
         audio_seconds = float(ep.duration_seconds) if ep.duration_seconds else None
         ctx = {
-            "podcast": podcast.title if podcast else "",
+            "podcast": show_label(podcast),
             "title": ep.title,
             "description": ep.description or "",
         }
     transcript = storage.read_transcript(path)
+    # One voice split into two labels, or "unknown" names: tidy before checking.
+    unified = unify_speakers(transcript)
+    if unified:
+        storage.write_transcript(path, transcript)
     issues = mechanical_issues(transcript, audio_seconds)
     corrected: dict[str, str] = {}
     names_checked = False
@@ -200,6 +206,7 @@ def run_check(episode_id: int, *, names: bool = True) -> dict[str, Any]:
             if changes and not verdict["ok"] and verdict["confidence"] == "high":
                 before = {k: transcript.speakers.get(k, k) for k in changes}
                 transcript.speakers.update(changes)
+                unified = unify_speakers(transcript) or unified
                 storage.write_transcript(path, transcript)
                 corrected = changes
                 issues.append(
@@ -238,7 +245,7 @@ def run_check(episode_id: int, *, names: bool = True) -> dict[str, Any]:
         ep = session.get(Episode, episode_id)
         if ep is not None:
             ep.transcript_check = result
-            if corrected:
+            if corrected or unified:
                 ep.speakers = dict(transcript.speakers)
             session.add(ep)
             session.commit()

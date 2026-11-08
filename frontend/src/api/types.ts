@@ -232,6 +232,8 @@ export interface DiscoverGenre {
 export type BookStatus = 'queued' | 'writing' | 'ready' | 'failed'
 /** 'past': told looking back on the conversation; 'present': told as it happens. */
 export type BookTense = 'past' | 'present'
+/** 'retelling': the conversation told by a narrator or speaker; 'book': the speaker's own book. */
+export type BookForm = 'retelling' | 'book'
 
 export interface Book {
   id: number
@@ -257,6 +259,7 @@ export interface Book {
   review_summary: string
   narrator: string // speaker telling it in the first person ('' = narrator)
   tense: BookTense
+  form: BookForm
   cost_usd: number | null // measured API spend of the writing job
   error: string | null
   created_at: ISODate

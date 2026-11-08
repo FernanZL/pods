@@ -99,7 +99,7 @@ Backends (`providers/transcription/`):
 | GET `/podcasts/{id}/poster.png` | | the show's artwork as a 480px slate/marigold duotone (`services/artwork.py`, cached next to `artwork.img`); 404 without artwork | home |
 | GET `/books/quote` | | `BookQuote` or null: a verified pull quote from a ready book, rotating daily (the home page's staff pick) | home |
 | POST `/books/estimate` | `{episode_id}` | `BookEstimate` (chapters, target words, pages, USD, `voices`: speakers who can tell it, host first) | books |
-| POST `/books` | `{episode_id, narrator?, tense="past"\|"present"}` | `BookOut` (201); queues a `book` job; 409 without a transcript; 422 if `narrator` (a voice's label or name) is not a main named speaker. `tense` "present" tells the book as the conversation happens instead of looking back | books |
+| POST `/books` | `{episode_id, narrator?, tense="past"\|"present", form="retelling"\|"book"}` | `BookOut` (201); queues a `book` job; 409 without a transcript; 422 if `narrator` (a voice's label or name) is not a main named speaker. `tense` "present" tells the book as the conversation happens instead of looking back. `form` "book" (needs `narrator`) is the speaker's own non-fiction book, written to the reader; 422 without a narrator. Titles keep to the episode's own title | books |
 | GET `/books`, GET `/books/{id}` | | `BookOut[]` / `BookOut` (status, live progress) | books |
 | POST `/books/{id}/reshuffle` | | `BookOut`: new design seed, re-rendered, no model calls | books |
 | GET `/books/{id}/pdf` | `?download=true` | the PDF (inline or attachment) | books |

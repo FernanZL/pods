@@ -58,6 +58,7 @@ def _out(session: Session, book: Book) -> BookOut:
         review_summary=book.review_summary or "",
         narrator=book.narrator or "",
         tense="present" if book.tense == "present" else "past",
+        form="book" if book.form == "book" else "retelling",
         cost_usd=job.cost_usd if job else None,
         error=book.error,
         created_at=book.created_at,
@@ -124,6 +125,8 @@ def create_book(body: BookCreate, session: SessionDep) -> BookOut:
         if voice is None:
             raise HTTPException(status_code=422, detail="That speaker cannot narrate this book")
         narrator = voice.name
+    if body.form == "book" and not narrator:
+        raise HTTPException(status_code=422, detail="Pick the speaker whose book it is")
     job = Job(kind="book", episode_id=episode.id, status="queued", message="Queued")
     session.add(job)
     session.commit()
@@ -134,6 +137,7 @@ def create_book(body: BookCreate, session: SessionDep) -> BookOut:
         title=episode.title,
         narrator=narrator,
         tense=body.tense,
+        form=body.form,
     )
     session.add(book)
     session.commit()

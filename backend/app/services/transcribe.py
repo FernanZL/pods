@@ -26,6 +26,7 @@ from app.providers import get_llm, get_transcriber
 from app.providers.transcription.fake import FakeTranscriber
 from app.services import audio
 from app.services.downloader import download_episode
+from app.services.uploads import show_label
 
 log = logging.getLogger(__name__)
 
@@ -120,6 +121,38 @@ def _default_speaker_name(label: str) -> str:
     return f"Speaker {label}"
 
 
+def unify_speakers(transcript: Transcript) -> bool:
+    """Tidy speaker labels after naming. Diarization often splits one voice into two
+    labels (a solo lecture comes back as S1 and S2): labels that got the same real name
+    become one speaker, "unknown"-style names fall back to "Speaker X", and labels with
+    no segments are dropped. Returns True when anything changed."""
+    talk: dict[str, float] = {}
+    for seg in transcript.segments:
+        talk[seg.speaker] = talk.get(seg.speaker, 0.0) + max(0.0, seg.end - seg.start)
+    names = dict(transcript.speakers)
+    for label, name in names.items():
+        if name.strip().lower() in _UNKNOWN_MARKERS:
+            names[label] = _default_speaker_name(label)
+    keep: dict[str, str] = {}  # real name -> the label with the most talk time
+    for label in sorted(names, key=lambda k: -talk.get(k, 0.0)):
+        name = names[label]
+        if name != _default_speaker_name(label):
+            keep.setdefault(name, label)
+    relabel = {
+        label: keep[name] for label, name in names.items() if name in keep and keep[name] != label
+    }
+    used = {relabel.get(s.speaker, s.speaker) for s in transcript.segments}
+    final = {k: v for k, v in names.items() if k not in relabel and k in used}
+    if not relabel and final == transcript.speakers:
+        return False
+    for seg in transcript.segments:
+        seg.speaker = relabel.get(seg.speaker, seg.speaker)
+    if relabel:
+        transcript.segments = merge_segments(transcript.segments)
+    transcript.speakers = final
+    return True
+
+
 def name_speakers(
     segments: list[Segment],
     context: TranscriptionContext,
@@ -143,8 +176,12 @@ def name_speakers(
         {
             "role": "user",
             "content": (
-                f"Podcast: {context.podcast_title}\n"
-                f"Episode: {context.title}\n"
+                (
+                    f"Podcast: {context.podcast_title}\n"
+                    if context.podcast_title
+                    else "Source: an audio file the user uploaded (not from a podcast feed)\n"
+                )
+                + f"Episode: {context.title}\n"
                 f"Description: {desc_excerpt}\n"
                 f"Speaker labels: {', '.join(labels)}\n\n"
                 "Opening transcript segments:\n" + "\n".join(sample_lines)
@@ -199,7 +236,7 @@ def transcribe_episode(
             episode_id=episode_id,
             title=episode.title,
             description=episode.description,
-            podcast_title=podcast.title,
+            podcast_title=show_label(podcast),
         )
 
     audio_path: Path | None = None
@@ -317,6 +354,8 @@ def transcribe_episode(
                 speakers=speakers,
                 segments=merged,
             )
+            unify_speakers(transcript)
+            speakers, merged = transcript.speakers, transcript.segments
             transcript_path = ep_dir / "transcript.json"
             storage.write_transcript(transcript_path, transcript)
         finally:

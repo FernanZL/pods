@@ -144,7 +144,9 @@ function BookCard({ book, onDelete }: { book: Book; onDelete: () => void }) {
         <span className="book-meta">
           {book.podcast_title} · {fmtRelativeDate(book.created_at)}
         </span>
-        {book.narrator || book.tense === 'present' ? (
+        {book.form === 'book' && book.narrator ? (
+          <span className="book-voice">Written as {book.narrator}&rsquo;s own book</span>
+        ) : book.narrator || book.tense === 'present' ? (
           <span className="book-voice">
             {book.narrator ? `Told by ${book.narrator}, in the first person` : 'Narrated'}
             {book.tense === 'present' ? ', as it happens' : ''}
@@ -200,7 +202,7 @@ function BookCard({ book, onDelete }: { book: Book; onDelete: () => void }) {
               className="btn btn-sm btn-primary"
               disabled={retry.isPending}
               onClick={() =>
-                retry.mutate({ episodeId: book.episode_id, narrator: book.narrator || null, tense: book.tense }, {
+                retry.mutate({ episodeId: book.episode_id, narrator: book.narrator || null, tense: book.tense, form: book.form }, {
                   onError: (e) =>
                     setErr(e instanceof ApiError ? e.detail : 'Could not start a new book.'),
                 })

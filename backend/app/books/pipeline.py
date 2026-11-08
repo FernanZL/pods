@@ -50,6 +50,7 @@ from app.models import Book as BookRow
 from app.models import Episode, Podcast, utcnow
 from app.providers import get_llm
 from app.services.artwork import artwork_path
+from app.services.uploads import show_label
 
 log = logging.getLogger(__name__)
 
@@ -107,6 +108,49 @@ _STYLE_BODY = """\
   inside paragraphs.
 - British or American spelling consistently (follow the transcript)."""
 
+_VOICE_AUTHOR = """Editorial preset: THE AUTHOR'S OWN BOOK (long-form non-fiction).
+- This is {name}'s own book, written by {name} for the reader. {name} writes in the first
+  person ("I") and talks to the reader directly ("you"), the way an author writes the book
+  they are known for: teaching, explaining, arguing, telling their stories and examples.
+- The recording is raw material, never the story. Do not report it: no "I said", "I asked",
+  "I told", "I began by", "I explained", "I described", "as I put it", "I mentioned", "in this
+  episode / lecture / video / talk / conversation", "today", "my guest", "the audience",
+  "listeners", "viewers", "members", "chat". State the ideas as the author's own claims:
+  "The ego is a story the mind tells about itself", never "I said the ego is...".
+- Sound like {name}: their vocabulary, their kinds of examples, their humour and directness,
+  their recurring phrases, as their lines show them. Polished for the page: no filler,
+  false starts or verbal tics of speech.
+- All substance comes from the transcript: the ideas, explanations, examples, stories,
+  numbers, studies, caveats and practical steps. You may connect, explain plainly, ask the
+  reader questions and speak to their experience ("you have probably felt this"), but never
+  add facts, studies, stories, memories or advice that nobody in the recording gave.
+{others_rule}"""
+
+_AUTHOR_OTHERS = """\
+- {others} {appear} the author learned from, by name and with credit, the way a
+  non-fiction author cites someone they interviewed: "{other} has a way of putting this:
+  ⟦...⟧", "When I sat down with {other}, ...". Their ideas stay theirs, never told as "I";
+  their best lines are quoted verbatim. Mentioning that you talked with {other} is fine, but
+  the conversation is never the frame of a chapter.
+- When most of the substance comes from {other}, the book is {name} presenting {other}'s
+  ideas with credit, plus {name}'s own explanations and comments. A question {name} asked
+  becomes the question the section explores ("So why would anyone ...?"), not "I asked"."""
+
+_AUTHOR_SOLO = """\
+- {name} is the only voice: the whole book is theirs, with no one else to credit."""
+
+_STYLE_BOOK = """\
+- Teach, don't recap: open each section with a hook the author would use (a question, a
+  case, a striking claim, a story they tell), build the argument step by step, and land the
+  point for the reader's own life. Keep the examples, stories, numbers, caveats and nuance
+  that make it real. Explain technical ideas plainly without dumbing down.
+- Long, not padded: cover everything substantive in the slice. Cut repetition, ad reads,
+  sponsor segments, housekeeping, audience Q&A logistics and filler. Do not summarise the
+  section at its end and do not moralise beyond what the author says.
+- Rhythm: vary sentence length; short paragraphs (2-5 sentences); concrete verbs; no lists
+  inside paragraphs.
+- British or American spelling consistently (follow the transcript)."""
+
 _QUOTING = """Quoting rules (strict, checked by code against the transcript):
 - Wrap every verbatim quote in ⟦ and ⟧ inside paragraph text, e.g. as she puts it, ⟦the
   morning sets the clock⟧. Copy the words EXACTLY from the transcript slice (5-30 words, one
@@ -120,8 +164,24 @@ _QUOTING_FIRST_PERSON = """
   quoted; when one is worth quoting, frame it as mine (as I put it, ⟦...⟧)."""
 
 
+_QUOTING_AUTHOR = """Quoting rules (strict, checked by code against the transcript):
+- The author's own lines are the prose: rewrite them as written text, never quote them in a
+  paragraph and never frame them as speech ("as I said", "as I put it").
+- Other speakers are quoted verbatim: wrap the words in ⟦ and ⟧ inside paragraph text, e.g.
+  as Robert puts it, ⟦the morning sets the clock⟧. Copy EXACTLY from the transcript slice
+  (5-30 words, one contiguous passage, no ellipses, no edits) and say who it is around it.
+  Use 0-4 such quotes per section; none when no one else speaks in the slice.
+- At most one "pull" quote per section: a striking verbatim line (8-30 words), which may be
+  the author's own. Quotes that do not match the transcript exactly are removed."""
+
+
 def present_tense(ctx: dict[str, str]) -> bool:
     return ctx.get("tense") == "present"
+
+
+def authored(ctx: dict[str, str]) -> bool:
+    """The speaker's own book (form "book"), rather than a retelling of the conversation."""
+    return ctx.get("form") == "book" and bool(ctx.get("narrator"))
 
 
 def style(ctx: dict[str, str]) -> str:
@@ -129,6 +189,19 @@ def style(ctx: dict[str, str]) -> str:
     first person (ctx["narrator"] is that speaker's display name), told looking back
     (ctx["tense"] "past", the default) or as it happens ("present")."""
     name = ctx.get("narrator", "")
+    if authored(ctx):
+        others = [s for s in ctx.get("speakers", "").split("|") if s and s != name]
+        others_rule = (
+            _AUTHOR_OTHERS.format(
+                name=name,
+                others=" and ".join(others),
+                other=others[0].split()[0],
+                appear="appear as people" if len(others) > 1 else "appears as someone",
+            )
+            if others
+            else _AUTHOR_SOLO.format(name=name)
+        )
+        return f"{_VOICE_AUTHOR.format(name=name, others_rule=others_rule)}\n{_STYLE_BOOK}"
     present = present_tense(ctx)
     if not name:
         voice = _VOICE_NARRATOR
@@ -150,7 +223,42 @@ def style(ctx: dict[str, str]) -> str:
 
 
 def quoting(ctx: dict[str, str]) -> str:
+    if authored(ctx):
+        return _QUOTING_AUTHOR
     return _QUOTING + (_QUOTING_FIRST_PERSON if ctx.get("narrator") else "")
+
+
+# ---------------------------------------------------------------------------- titles
+
+_TITLE_TAGS = re.compile(r"\s*[\(\[][^\)\]]*[\)\]]")
+_TITLE_NUMBER = re.compile(r"^\s*(#\s*\d+|ep(isode)?\.?\s*\d+)\s*[:\-\u2013\u2014|.]*\s*", re.I)
+_TITLE_STOP = frozenset(
+    {"the", "and", "for", "with", "your", "you", "our", "how", "why", "what", "from", "into"}
+)
+
+
+def clean_title(title: str) -> str:
+    """The episode title tidied for a cover: no bracketed tags, episode numbers, or a
+    guest name after " | " (the longest part is kept)."""
+    t = _TITLE_NUMBER.sub("", _TITLE_TAGS.sub("", title))
+    parts = [p.strip() for p in re.split(r"\s+[|\u2013\u2014]\s+|\s+-\s+", t) if p.strip()]
+    t = max(parts, key=len) if parts else t
+    return t.strip(" .,:;-|\u2013\u2014") or title.strip()
+
+
+def _title_stems(title: str) -> set[str]:
+    words = re.findall(r"[a-z0-9]+", title.lower())
+    return {w[:5] for w in words if len(w) > 2 and w not in _TITLE_STOP}
+
+
+def pick_title(proposed: str, episode_title: str) -> str:
+    """The planner's title when it keeps to the episode's own words (a tidied version of
+    it), otherwise the cleaned episode title: a book is never renamed into something new."""
+    proposed = proposed.strip().strip('"')
+    stems, source = _title_stems(proposed), _title_stems(episode_title)
+    if stems and source and len(stems & source) / len(stems) >= 0.75:
+        return proposed
+    return clean_title(episode_title)
 
 
 @dataclass
@@ -250,15 +358,41 @@ def _seg_words(transcript: Transcript, first: int, last: int) -> int:
 # ---------------------------------------------------------------------------- planning
 
 
+def _source(ctx: dict[str, str]) -> str:
+    if ctx.get("podcast"):
+        return f"Podcast: {ctx['podcast']}, episode {ctx['number']}: {ctx['title']}"
+    return f"Recording (an uploaded audio file): {ctx['title']}"
+
+
 def _plan_messages(transcript: Transcript, ctx: dict[str, str], chapters: int, target: int):
     n = len(transcript.segments)
-    system = f"""You are the editor planning a long-form magazine-style book from one podcast
-episode. The book retells the conversation as narrative non-fiction: it is long and complete,
-NOT a summary.
+    if authored(ctx):
+        intro = (
+            f"You are the editor planning {ctx['narrator']}'s own long-form non-fiction book,"
+            f" built from one recording of {ctx['narrator']}. It is not a retelling of the"
+            " recording: it teaches its ideas the way a book by the author would. It is long"
+            " and complete, NOT a summary."
+        )
+        arcs = (
+            "- Chapters are the book's argument: each is built around one idea and titled by"
+            " it, never by a moment in the recording. Keep the recording's order (sections"
+            " must be contiguous), choosing chapter breaks where the ideas change.\n"
+            "- Title, deck and deks never mention the episode, the recording, the host, the"
+            " guest or the conversation; the deck is the book's back-cover line in the"
+            " author's voice."
+        )
+    else:
+        intro = (
+            "You are the editor planning a long-form magazine-style book from one podcast\n"
+            "episode. The book retells the conversation as narrative non-fiction: it is long"
+            " and complete,\nNOT a summary."
+        )
+        arcs = "- Chapters follow the conversation's real arcs, not equal time slices."
+    system = f"""{intro}
 
 Return ONLY a JSON object:
 {{
-  "title": "short, evocative book title (2-6 words, no colon)",
+  "title": "the episode's own title, tidied for a book cover (see rules)",
   "title_accent": "the last 1-2 words of the title, to be set in italic",
   "deck": "one or two sentences selling the book",
   "closing_quote": "a memorable verbatim line from the transcript for the last page",
@@ -281,7 +415,13 @@ Rules:
 - "first"/"last" are segment indices [0..{n - 1}]; sections are contiguous, cover the whole
   conversation, and never overlap. Put ads, sponsor reads and housekeeping inside the nearest
   section (the writer will skip them) rather than making a section of them.
-- Chapters follow the conversation's real arcs, not equal time slices.
+{arcs}
+- The title is NOT a new invention: it is the episode's own title, tidied for a cover. Keep
+  its key words; drop the show name, episode numbers, a guest name after "|" or "-",
+  bracketed tags like "(Free Members Lecture)" and presenter lead-ins like "Dr K Explains".
+  E.g. "Access the Sublime & Live Your Best Life | Robert Greene" -> "Access the Sublime &
+  Live Your Best Life"; "Dr K. Explains Escaping Your Ego (Free Members Lecture)" ->
+  "Escaping Your Ego".
 - Quotes must be copied exactly from the transcript.
 - Title, deck and every dek are in the same voice as the book (see the style below).
 - Opener and closing quotes must be substantive lines from the conversation itself: never
@@ -289,7 +429,7 @@ Rules:
 - The whole book will be about {target} words.
 {style(ctx)}"""
     user = (
-        f"Podcast: {ctx['podcast']}\nEpisode {ctx['number']}: {ctx['title']}\n"
+        f"{_source(ctx)}\n"
         f"Description: {ctx['description'][:1500]}\n\nTRANSCRIPT (numbered segments):\n"
         + _numbered(transcript)
     )
@@ -332,7 +472,7 @@ def _parse_plan(data: dict[str, Any], transcript: Transcript, ctx: dict[str, str
     tail = chapters[-1].sections[-1]
     tail.last = n - 1
     return Plan(
-        title=str(data.get("title") or ctx["title"]).strip(),
+        title=pick_title(str(data.get("title") or ""), ctx["title"]),
         title_accent=str(data.get("title_accent") or "").strip(),
         deck=str(data.get("deck") or "").strip(),
         closing=str(data.get("closing_quote") or "").strip(),
@@ -364,8 +504,19 @@ def _section_messages(
     )
     gloss = "\n".join(f"- {g.get('term')}: {g.get('definition')}" for g in plan.glossary)
     banned = ", ".join(f'"{b}"' for b in BANNED)
-    system = f"""You are writing one section of a long-form book that retells a podcast
-conversation as narrative non-fiction.
+    if authored(ctx):
+        role = (
+            f"You are ghost-writing one section of {ctx['narrator']}'s own non-fiction book,"
+            f" built from a recording of {ctx['narrator']}."
+        )
+        callout = '"Try this: ..."'
+    else:
+        role = (
+            "You are writing one section of a long-form book that retells a podcast\n"
+            "conversation as narrative non-fiction."
+        )
+        callout = '"From the episode: ..."'
+    system = f"""{role}
 
 {style(ctx)}
 
@@ -378,7 +529,7 @@ Return ONLY a JSON object:
   {{"type": "p", "text": "paragraph with ⟦verbatim quotes⟧"}},
   {{"type": "pull", "quote": "verbatim striking line"}},
   {{"type": "pair", "left": "verbatim line", "right": "verbatim reply"}},
-  {{"type": "callout", "title": "From the episode: ...", "items": ["practical step", "..."]}}
+  {{"type": "callout", "title": {callout}, "items": ["practical step", "..."]}}
 ]}}
 - Mostly "p" blocks. "pull" at most once, roughly mid-section. "pair" only for a real
   back-and-forth exchange (both lines verbatim). "callout" only when the slice gives concrete,
@@ -392,8 +543,7 @@ Return ONLY a JSON object:
   segments or the recording, and never say where they start or stop ("the transcript ends
   before..."). If the slice stops mid-thought, end on its last complete idea."""
     user = (
-        f"Book: {plan.title}\nPodcast: {ctx['podcast']}, episode {ctx['number']}: "
-        f"{ctx['title']}\nChapter {ci + 1}: {ch.title} ({ch.dek})\n"
+        f"Book: {plan.title}\n{_source(ctx)}\nChapter {ci + 1}: {ch.title} ({ch.dek})\n"
         f"This section: {sec.heading}\nBrief: {sec.brief}\n\nOutline (>> = this section):\n"
         f"{outline}\n\nGlossary:\n{gloss or '-'}\n\nTRANSCRIPT SLICE:\n"
         + _numbered(transcript, sec.first, sec.last)
@@ -485,7 +635,16 @@ def _review_messages(plan: Plan, written: dict[tuple[int, int], Written], transc
         if name
         else ""
     )
-    if present_tense(ctx):
+    if authored(ctx):
+        voice_rule = (
+            f"\nThe book is written as {name}'s own book, in the first person, to the reader."
+            " Report narration that reports the recording instead of teaching its ideas"
+            ' ("I said", "I asked", "I explained", "as I put it", "in this episode / lecture /'
+            ' video", "my guest", "the audience") as housekeeping; facts, studies, stories,'
+            f" memories or advice that nobody in the recording gave as off_topic; and another"
+            f" speaker's idea told as {name}'s own as misattribution."
+        )
+    elif present_tense(ctx):
         voice_rule += (
             "\nThe book is told in the present tense, as the conversation happens; that is"
             ' intended. Report hindsight that gives away later parts of the talk ("later",'
@@ -519,7 +678,7 @@ Use an empty list when the book is accurate."""
                 f"\n{_section_text(written[(ci, si)])}"
             )
     user = (
-        f"Book: {plan.title}\nPodcast: {ctx['podcast']}, episode {ctx['number']}: {ctx['title']}"
+        f"Book: {plan.title}\n{_source(ctx)}"
         "\n\nDRAFT BOOK:\n" + "\n\n".join(parts) + "\n\nTRANSCRIPT:\n" + _numbered(transcript)
     )
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
@@ -630,7 +789,7 @@ def _fake_plan(transcript: Transcript, ctx: dict[str, str], chapters: int) -> Pl
             )
         )
     return Plan(
-        title=ctx["title"],
+        title=clean_title(ctx["title"]),
         title_accent="",
         deck=ctx["description"][:200],
         closing=" ".join(segs[-1].text.split()[:12]),
@@ -794,6 +953,7 @@ def _assemble(plan: Plan, written: dict[tuple[int, int], Written], transcript, c
         demo=ctx.get("demo") == "1",
         narrator=ctx.get("narrator", ""),
         tense=ctx.get("tense", "past"),
+        form="book" if authored(ctx) else "retelling",
     )
 
 
@@ -866,13 +1026,14 @@ def build_book(book_id: int, on_progress: ProgressFn) -> None:
         session.add(row)
         session.commit()
         ctx = {
-            "podcast": podcast.title,
+            "podcast": show_label(podcast),
             "number": str(episode.number),
             "title": episode.title,
             "description": episode.description or "",
             "demo": "1" if podcast.rss_url.startswith("demo://") else "0",
             "narrator": row.narrator or "",
             "tense": "present" if row.tense == "present" else "past",
+            "form": "book" if row.form == "book" else "retelling",
         }
     roles = speaker_roles(transcript, podcast.title)
     ctx["speakers"] = "|".join(name for _, name, _ in roles)
@@ -973,7 +1134,8 @@ def build_book(book_id: int, on_progress: ProgressFn) -> None:
 def repair_book(book_id: int) -> BookRow:
     """Re-check an existing book with the current verifier and rules, then re-render.
 
-    No model calls: recovers speaker words left unquoted in the narration, drops
+    No model calls: retitles a book whose title strays from the episode's, recovers speaker
+    words left unquoted in the narration, drops
     minor diarization labels from the credits, replaces housekeeping openers and
     closers, caps the cover deck. Text the writer produced is otherwise untouched.
     """
@@ -986,8 +1148,13 @@ def repair_book(book_id: int) -> BookRow:
             raise ValueError("The episode for this book is missing")
         bdir = storage.to_abs(row.dir_path)
         transcript = storage.read_transcript(storage.to_abs(episode.transcript_path))
+        episode_title = episode.title
     path = bdir / "book.json"
     book = book_from_dict(json.loads(path.read_text("utf-8")))
+    title = pick_title(book.title, episode_title)  # an invented title becomes the episode's
+    if title != book.title:
+        book.title = title
+        book.title_accent = book.title_accent if title.endswith(book.title_accent) else ""
     duration = transcript.segments[-1].end if transcript.segments else 0.0
     quotes = 0
     for ch in book.chapters:
@@ -1010,7 +1177,7 @@ def repair_book(book_id: int) -> BookRow:
             for c in book.chapters
             for b in c.blocks
         )
-        row.quotes, row.words = quotes + pulls, word_count(book)
+        row.quotes, row.words, row.title = quotes + pulls, word_count(book), book.title
         session.add(row)
         session.commit()
     return render_book(book_id)

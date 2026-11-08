@@ -114,3 +114,13 @@ def add_upload(
         session.commit()
         session.refresh(episode)
         return episode
+
+
+def show_label(podcast: Podcast | None) -> str:
+    """The show name to print and to give the models. "" for the default upload bucket,
+    which is a folder, not a show: there the recording's own title stands alone."""
+    if podcast is None:
+        return ""
+    if podcast.rss_url == UPLOAD_SCHEME + storage.slugify(DEFAULT_SHOW):
+        return ""
+    return podcast.title

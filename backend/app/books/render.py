@@ -85,12 +85,25 @@ class _Notes:
         return q
 
 
+def _source(book: Book) -> str:
+    """Where the words come from: "Huberman Lab, episode 455", or the recording's own
+    title for an upload that belongs to no show."""
+    if book.podcast_title:
+        return f"{_e(book.podcast_title)}, episode {book.episode_number}"
+    return f"&#8220;{_e(book.episode_title)}&#8221;"
+
+
+def _colophon_source(book: Book) -> str:
+    if book.podcast_title:
+        return f"{_e(book.podcast_title)}, episode {book.episode_number}: {_e(book.episode_title)}"
+    return f"the recording &#8220;{_e(book.episode_title)}&#8221;"
+
+
 def _inline(q: Quote, notes: _Notes, book: Book) -> str:
     notes.add(q)
     return (
         f'<q class="said">{_e(q.text)}</q>'
-        f'<span class="fn"><b>{_e(q.speaker)}</b>, {_ts(q.start)}. '
-        f"{_e(book.podcast_title)}, episode {book.episode_number}.</span>"
+        f'<span class="fn"><b>{_e(q.speaker)}</b>, {_ts(q.start)}. {_source(book)}.</span>'
     )
 
 
@@ -192,14 +205,21 @@ def _cover(book: Book, segs: Sequence[Segment], theme: Theme, image_uri: str | N
     if book.title_accent and book.title.endswith(book.title_accent):
         head = _e(book.title[: -len(book.title_accent)])
         title = f"{head}<em>{_e(book.title_accent)}</em>"
-    masthead = (
-        f'<div class="cover-masthead"><b>Pods</b><span>{_e(book.podcast_title)} &middot; '
-        f"Episode {book.episode_number}</span></div>"
+    where = (
+        f"{_e(book.podcast_title)} &middot; Episode {book.episode_number}"
+        if book.podcast_title
+        else "From a recording"
     )
+    masthead = f'<div class="cover-masthead"><b>Pods</b><span>{where}</span></div>'
     w, h = COVER_ART_SIZE[layout]
     tapes = art_markup(theme.art, segs, 0, book.duration, w, h, theme, image_uri=image_uri)
+    credit = (
+        f"In the voice of {_e(book.narrator)}, written by AI"
+        if book.form == "book" and book.narrator
+        else _e(" & ".join(book.speakers))
+    )
     foot = (
-        f'<div class="cover-foot"><span>{_e(" & ".join(book.speakers))} &middot; '
+        f'<div class="cover-foot"><span>{credit} &middot; '
         f"{_ts(book.duration)} of conversation</span>"
         f"<span>{'Fictional demo content' if book.demo else 'Made with Pods'}</span></div>"
     )
@@ -231,7 +251,13 @@ def _contents(book: Book) -> str:
             f"{_e(ch.title)}</a><small>{_e(ch.dek)}</small>{sec_html}</span>"
             f'<span class="p"><a href="#ch{i + 1}"></a></span></li>'
         )
-    if book.narrator:
+    if book.narrator and book.form == "book":
+        who = _e(book.narrator)
+        voice = (
+            f"The text is written fresh by AI as {who}&rsquo;s own book, in {who}&rsquo;s voice, "
+            f"from what was said in the episode; {who} did not write or review it. Words in "
+        )
+    elif book.narrator:
         who = _e(book.narrator)
         voice = (
             f"The narrative is written fresh by AI in {who}&rsquo;s voice, in the first person, "
@@ -239,7 +265,7 @@ def _contents(book: Book) -> str:
         )
     else:
         voice = "The narrative is written fresh; words in "
-    if book.tense == "present":
+    if book.tense == "present" and book.form != "book":
         voice = voice.replace(
             "The narrative is written fresh",
             "The narrative is written fresh, in the present tense as the conversation happens,",
@@ -275,8 +301,7 @@ def _closing(book: Book, notes: _Notes) -> str:
     return (
         f'<section class="closing">{big}<div class="sources">'
         f"<h3>Every quote, and where it was said</h3><table>{rows}</table></div>"
-        f'<p class="colophon">Made with Pods from {_e(book.podcast_title)}, episode '
-        f"{book.episode_number}: {_e(book.episode_title)}.{demo}</p></section>"
+        f'<p class="colophon">Made with Pods from {_colophon_source(book)}.{demo}</p></section>'
     )
 
 

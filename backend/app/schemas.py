@@ -267,6 +267,7 @@ class DiscoverGenre(BaseModel):
 
 
 BookTense = Literal["past", "present"]
+BookForm = Literal["retelling", "book"]
 
 
 class BookCreate(BaseModel):
@@ -276,6 +277,9 @@ class BookCreate(BaseModel):
     narrator: str | None = None
     # "past": told looking back on the conversation; "present": told as it happens.
     tense: BookTense = "past"
+    # "retelling": the conversation, told by a narrator or a speaker (with `tense`).
+    # "book": the `narrator` speaker's own non-fiction book, written to the reader.
+    form: BookForm = "retelling"
 
 
 class BookVoice(BaseModel):
@@ -331,6 +335,7 @@ class BookOut(BaseModel):
     review_summary: str
     narrator: str = ""  # speaker telling it in the first person ("" = narrator)
     tense: BookTense = "past"
+    form: BookForm = "retelling"
     cost_usd: float | None = None  # measured API spend of the writing job
     error: str | None
     created_at: datetime

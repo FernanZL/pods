@@ -2,6 +2,7 @@ import type {
   Book,
   BookEstimate,
   BookQuote,
+  BookForm,
   BookTense,
   Episode,
   TranscriptCheck,
@@ -340,11 +341,12 @@ export function createBook(
   episodeId: number,
   narrator: string | null = null,
   tense: BookTense = 'past',
+  form: BookForm = 'retelling',
 ): Promise<Book> {
   return request<Book>('/books', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ episode_id: episodeId, narrator, tense }),
+    body: JSON.stringify({ episode_id: episodeId, narrator, tense, form }),
   })
 }
 

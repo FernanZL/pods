@@ -203,12 +203,14 @@ export function UploadDialog({ open, podcasts, onClose, onUploaded }: UploadDial
             />
           </label>
           <label className="upload-field">
-            <span className="upload-field-label">Show</span>
+            <span className="upload-field-label">
+              Show or creator <span className="upload-field-optional">optional</span>
+            </span>
             <input
               className="input input-sm"
               value={show}
               disabled={busy}
-              placeholder={DEFAULT_SHOW}
+              placeholder={`e.g. HealthyGamerGG (else ${DEFAULT_SHOW})`}
               list="upload-show-options"
               onChange={(e) => setShow(e.target.value)}
             />

@@ -199,3 +199,103 @@ def test_book_told_in_the_present_tense(client: TestClient, session: Session) ->
     # the default stays the retrospective telling
     plain = client.post("/api/books", json={"episode_id": ep_id}).json()
     assert plain["tense"] == "past"
+
+
+# ------------------------------------------------------------------ the author's own book
+
+
+def test_author_book_style_teaches_instead_of_reporting() -> None:
+    duo = {"speakers": "Andrew Huberman|Robert Greene", "narrator": "Andrew Huberman"}
+    book = pipeline.style({**duo, "form": "book"})
+    assert "THE AUTHOR'S OWN BOOK" in book and 'no "I said", "I asked"' in book
+    assert "Robert Greene appears as someone the author learned from" in book
+    assert "RETELLING" not in book
+    assert "never quote them" in pipeline.quoting({**duo, "form": "book"})
+
+    solo = pipeline.style({"speakers": "Dr. K", "narrator": "Dr. K", "form": "book"})
+    assert "Dr. K is the only voice" in solo
+
+    # a book needs an author: without a speaker it stays a narrated retelling
+    assert not pipeline.authored({"form": "book", "narrator": ""})
+    assert "MAGAZINE FEATURE" in pipeline.style({"form": "book", "narrator": ""})
+
+
+def test_book_written_as_the_speakers_own(client: TestClient, session: Session) -> None:
+    ep_id = _episode(session)
+    no_author = client.post("/api/books", json={"episode_id": ep_id, "form": "book"})
+    assert no_author.status_code == 422
+
+    created = client.post("/api/books", json={"episode_id": ep_id, "narrator": "B", "form": "book"})
+    assert created.status_code == 201 and created.json()["form"] == "book"
+    book = _wait_ready(client, created.json()["id"])
+    assert book["status"] == "ready", book["error"]
+    assert book["form"] == "book" and book["narrator"] == "Guest"
+
+    row = session.get(Book, book["id"])
+    assert row is not None and row.dir_path
+    data = json.loads((storage.to_abs(row.dir_path) / "book.json").read_text())
+    assert data["form"] == "book"
+    assert client.post("/api/books", json={"episode_id": ep_id}).json()["form"] == "retelling"
+
+
+# ------------------------------------------------------- titles, speakers, upload credits
+
+
+def test_book_title_keeps_to_the_episode_title() -> None:
+    greene = "Access the Sublime & Live Your Best Life | Robert Greene"
+    drk = "Dr K. Explains Escaping Your Ego (Free Members Lecture)"
+    assert pipeline.clean_title(greene) == "Access the Sublime & Live Your Best Life"
+    assert pipeline.clean_title(drk) == "Dr K. Explains Escaping Your Ego"
+    assert pipeline.clean_title("#455 - How to Focus | Dr. X") == "How to Focus"
+    # a tidied version is kept, an invented one falls back to the episode's own title
+    assert pipeline.pick_title("Escaping Your Ego", drk) == "Escaping Your Ego"
+    assert pipeline.pick_title("The Mind That Says I", drk) == "Dr K. Explains Escaping Your Ego"
+    assert pipeline.pick_title("The World Made Strange", greene) == pipeline.clean_title(greene)
+
+
+def test_one_voice_split_in_two_labels_becomes_one_speaker() -> None:
+    from app.domain import Segment, Transcript
+    from app.services.transcribe import unify_speakers
+
+    tr = Transcript(
+        episode_id=1,
+        model="m",
+        speakers={"S1": "Dr. K", "S2": "Dr. K", "A": "Unknown", "Z": "Nobody"},
+        segments=[
+            Segment("S1", 0.0, 60.0, "The more you say I am, the more problems."),
+            Segment("S2", 60.5, 70.0, "Events."),
+            Segment("A", 70.0, 70.0, "Read?"),
+            Segment("S2", 71.0, 80.0, "And since I've been bullied in the past."),
+        ],
+    )
+    assert unify_speakers(tr)
+    assert tr.speakers == {"S1": "Dr. K", "A": "Speaker A"}  # Z had no segments
+    assert [s.speaker for s in tr.segments] == ["S1", "A", "S1"]
+    assert tr.segments[0].text.endswith("Events.")  # S2's turn joined S1's (gap < 1.5s)
+    assert not unify_speakers(tr)  # idempotent
+
+
+def test_upload_book_has_no_fake_show_name(client: TestClient, session: Session) -> None:
+    from app.services.uploads import show_label
+
+    ep_id = _episode(session)
+    ep = session.get(Episode, ep_id)
+    assert ep is not None
+    pod = session.get(Podcast, ep.podcast_id)
+    assert pod is not None
+    pod.rss_url, pod.title = "upload://my-uploads", "My uploads"
+    session.add(pod)
+    session.commit()
+    assert show_label(pod) == ""
+    assert show_label(Podcast(title="Lectures", rss_url="upload://lectures", slug="l")) == (
+        "Lectures"
+    )
+
+    created = client.post("/api/books", json={"episode_id": ep_id, "narrator": "A"}).json()
+    book = _wait_ready(client, created["id"])
+    assert book["status"] == "ready", book["error"]
+    row = session.get(Book, book["id"])
+    assert row is not None and row.dir_path
+    data = json.loads((storage.to_abs(row.dir_path) / "book.json").read_text())
+    assert data["podcast_title"] == ""
+    assert data["title"] == "Light and sleep"  # the episode's own title

@@ -47,6 +47,7 @@ import {
   type UploadEpisodeInput,
 } from './client'
 import type {
+  BookForm,
   BookTense,
   ConversationPatch,
   EpisodeDetail,
@@ -393,11 +394,13 @@ export function useCreateBook() {
       episodeId,
       narrator,
       tense = 'past',
+      form = 'retelling',
     }: {
       episodeId: number
       narrator: string | null
       tense?: BookTense
-    }) => createBook(episodeId, narrator, tense),
+      form?: BookForm
+    }) => createBook(episodeId, narrator, tense, form),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.books })
       void qc.invalidateQueries({ queryKey: queryKeys.jobsAll })
